@@ -15,3 +15,5 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Hardened ticket resolution against repeated clicks while a ticket is closing.
 - Reserved the browser scrollbar gutter so starting a drag no longer shifts the layout horizontally.
 - Added the explicit Netlify adapter and continuous-deployment configuration.
+- Added a reduced-motion-aware confetti celebration for player level-ups.
+- Added a five-second ready countdown and gentle recurring nudge on resolvable tickets.

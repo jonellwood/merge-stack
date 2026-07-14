@@ -3,11 +3,20 @@
   import Board from '$lib/components/Board.svelte'; import Hud from '$lib/components/Hud.svelte'; import Tickets from '$lib/components/Tickets.svelte';
   import { actions, game, initialize, notice, ready } from '$lib/state/game-store';
   let settingsOpen=$state(false), ticketsOpen=$state(false), resetConfirm=$state(false);
-  onMount(()=>{initialize();const interval=setInterval(actions.tick,30_000);const focus=()=>actions.tick();addEventListener('focus',focus);return()=>{clearInterval(interval);removeEventListener('focus',focus)}});
+  let celebration=$state(0);
+  const confetti=Array.from({length:30},(_,index)=>({left:4+(index*37)%92,drift:(index*53)%180-90,delay:(index%8)*.045,duration:1.65+(index%5)*.16,color:['#45e5d0','#5b8cff','#ffc760','#ff6f91','#f7f9ff'][index%5],spin:index%2?'540deg':'-540deg'}));
+  onMount(()=>{
+    initialize();let lastLevel:number|null=null;let celebrationTimer:ReturnType<typeof setTimeout>;
+    const unsubscribe=game.subscribe(state=>{if(!state)return;if(lastLevel!==null&&state.player.level>lastLevel){celebration=state.player.level;clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>celebration=0,2_800)}lastLevel=state.player.level});
+    const interval=setInterval(actions.tick,30_000);const focus=()=>actions.tick();addEventListener('focus',focus);return()=>{clearTimeout(celebrationTimer);unsubscribe();clearInterval(interval);removeEventListener('focus',focus)}
+  });
 </script>
 <svelte:head><title>Merge Stack — Legacy Platform Recovery</title><meta name="description" content="A JavaScript-themed merge game." /></svelte:head>
 {#if $ready && $game}
   <div class:contrast={$game.settings.highContrast} class:reduced={$game.settings.reducedMotion} class="app">
+    {#if celebration}
+      <div class="celebration" aria-live="polite"><div class="level-banner"><small>DEPLOYMENT MILESTONE</small><strong>Level {celebration}!</strong></div>{#each confetti as piece}<i aria-hidden="true" style={`--left:${piece.left}%;--drift:${piece.drift}px;--delay:${piece.delay}s;--duration:${piece.duration}s;--color:${piece.color};--spin:${piece.spin}`}></i>{/each}</div>
+    {/if}
     <Hud state={$game} onSettings={()=>settingsOpen=true} />
     <main><Board state={$game} /><div class:open={ticketsOpen} class="ticket-drawer"><button class="drawer-handle" onclick={()=>ticketsOpen=!ticketsOpen}>Support Queue <span>{$game.tickets.length} active</span> <b>{ticketsOpen?'↓':'↑'}</b></button><Tickets state={$game} /></div></main>
     <footer><span>BRANCH: <b>recovery/main</b></span><div class="message" aria-live="polite"><i></i>{$notice}</div><span>LOCAL SAVE <b>● SYNCED</b></span></footer>
