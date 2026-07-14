@@ -1,0 +1,21 @@
+{
+  "name": "merge-stack",
+  "version": "1.0.0",
+  "description": "A tiny git-themed CLI game.",
+  "main": "src/game.js",
+  "scripts": {
+    "start": "node src/cli.js",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonellwood/merge-stack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jonellwood/merge-stack/issues"
+  },
+  "homepage": "https://github.com/jonellwood/merge-stack#readme"
+}
