@@ -1,0 +1,132 @@
+import { BALANCE } from '$lib/catalogs/balance';
+import { itemById, itemCatalog } from '$lib/catalogs/items';
+import type { BoardItem, GameState, Requirement, Ticket } from './types';
+
+export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+const clone = (state: GameState): GameState => structuredClone(state);
+
+export function normalizeEnergy(state: GameState, now = Date.now()): boolean {
+  if (state.player.energy >= state.player.maxEnergy) {
+    const changed = state.player.energyUpdatedAt !== now;
+    state.player.energyUpdatedAt = now;
+    return changed;
+  }
+  const elapsed = Math.max(0, now - state.player.energyUpdatedAt);
+  const gained = Math.floor(elapsed / BALANCE.energyRegenMs);
+  if (!gained) return false;
+  state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + gained);
+  state.player.energyUpdatedAt += gained * BALANCE.energyRegenMs;
+  if (state.player.energy >= state.player.maxEnergy) state.player.energyUpdatedAt = now;
+  return true;
+}
+
+export function weightedDrop<T extends { weight: number }>(choices: readonly T[], random = Math.random): T | undefined {
+  const valid = choices.filter((choice) => Number.isFinite(choice.weight) && choice.weight > 0);
+  const total = valid.reduce((sum, choice) => sum + choice.weight, 0);
+  if (!total) return undefined;
+  let point = Math.min(Math.max(random(), 0), 0.999999999) * total;
+  return valid.find((choice) => (point -= choice.weight) < 0) ?? valid.at(-1);
+}
+
+const ticketTemplates: Array<{ requester: string; title: string; description: string; requirements: Requirement[] }> = [
+  { requester:'Help Desk', title:'Password Field Alignment', description:'The pixels have unionized.', requirements:[{itemId:'string',quantity:1}] },
+  { requester:'Communications', title:'Escape This Headline', description:'Someone pasted a quote into another quote.', requirements:[{itemId:'character',quantity:2}] },
+  { requester:'Quality Assurance', title:'Known Issue Reproduction', description:'Please preserve the typo exactly as documented.', requirements:[{itemId:'typo',quantity:1}] },
+  { requester:'Operations', title:'Harmless Console Message', description:'It says warning, but in a reassuring color.', requirements:[{itemId:'warning',quantity:1}] },
+  { requester:'Human Resources', title:'Employee List Export', description:'Please make it Excel, PDF, and interactive.', requirements:[{itemId:'variable',quantity:1}] },
+  { requester:'Finance', title:'Monthly Report Failure', description:'It worked last month.', requirements:[{itemId:'expression',quantity:1},{itemId:'warning',quantity:1}] },
+  { requester:'Public Information', title:'Website Update', description:'Make the button modern, but exactly the same.', requirements:[{itemId:'function',quantity:1},{itemId:'string',quantity:1}] },
+  { requester:'Legacy Systems', title:'Compatibility Patch', description:'The bug is part of the approved workflow.', requirements:[{itemId:'callback',quantity:1},{itemId:'bug',quantity:1}] },
+  { requester:'Executive Office', title:'Strategic Dashboard', description:'Due before the requirements meeting.', requirements:[{itemId:'promise',quantity:1},{itemId:'regression',quantity:1}] }
+];
+
+function availableTemplates(level: number) {
+  const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 7);
+  return ticketTemplates.filter((template) => template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
+}
+export function generateTicket(state: GameState, now = Date.now()): Ticket {
+  const available = availableTemplates(state.player.level);
+  const activeTitles = new Set(state.tickets.map((ticket) => ticket.title));
+  const uniqueTemplates = available.filter((template) => !activeTitles.has(template.title));
+  const templates = uniqueTemplates.length > 0 ? uniqueTemplates : available;
+  const template = templates[state.ticketSequence % templates.length];
+  state.ticketSequence++;
+  const difficulty = template.requirements.reduce((sum, req) => sum + (itemById.get(req.itemId)?.level ?? 1) * req.quantity, 0);
+  return { id:makeId(), requesterId:template.requester.toLowerCase().replaceAll(' ','-'), requester:template.requester, title:template.title,
+    description:template.description, requirements:template.requirements, rewards:{ credits:20 + difficulty*15, xp:8 + difficulty*6 }, status:'active', createdAt:now };
+}
+
+export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
+  const originalTitles = state.tickets.map((ticket) => ticket.title);
+  const unique: Ticket[] = [];
+  for (const ticket of state.tickets) {
+    if (!unique.some((candidate) => candidate.title === ticket.title)) unique.push(ticket);
+  }
+  state.tickets = unique;
+  while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
+  return state.tickets.some((ticket, index) => ticket.title !== originalTitles[index]);
+}
+
+export function createGame(now = Date.now()): GameState {
+  const state: GameState = { schemaVersion:1, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+    cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, ticketSequence:0,updatedAt:now };
+  while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
+  return state;
+}
+
+function levelPlayer(state: GameState) {
+  state.player.level = Math.floor(state.player.xp / BALANCE.xpPerLevel) + 1;
+}
+export function moveOrMerge(original: GameState, sourceId: string, targetCellIndex: number, now = Date.now()): {state:GameState;ok:boolean;reason?:string;action?:string} {
+  const state=clone(original), source=state.items.find((i)=>i.instanceId===sourceId), cell=state.cells[targetCellIndex];
+  if (!source) return {state:original,ok:false,reason:'Item not found'};
+  if (!cell) return {state:original,ok:false,reason:'Invalid cell'};
+  if (cell.locked) return {state:original,ok:false,reason:'That cell is locked'};
+  if (source.cellIndex===targetCellIndex) return {state:original,ok:false,reason:'Same cell'};
+  if (itemById.get(source.definitionId)?.kind==='producer') return {state:original,ok:false,reason:'The workstation is bolted down'};
+  const target=state.items.find((i)=>i.cellIndex===targetCellIndex);
+  let action='move';
+  if (!target) source.cellIndex=targetCellIndex;
+  else {
+    const sourceDef=itemById.get(source.definitionId);
+    if (target.definitionId===source.definitionId && sourceDef?.nextItemId) {
+      state.items=state.items.filter((i)=>i.instanceId!==source.instanceId&&i.instanceId!==target.instanceId);
+      state.items.push({instanceId:makeId(),definitionId:sourceDef.nextItemId,cellIndex:targetCellIndex,createdAt:now});
+      state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state); action='merge';
+    } else {
+      if (itemById.get(target.definitionId)?.kind==='producer') return {state:original,ok:false,reason:'The workstation is bolted down'};
+      const old=source.cellIndex; source.cellIndex=target.cellIndex; target.cellIndex=old; action='swap';
+    }
+  }
+  state.updatedAt=now; return {state,ok:true,action};
+}
+
+export function activateProducer(original: GameState, producerId: string, random=Math.random, now=Date.now()) {
+  const state=clone(original); normalizeEnergy(state,now);
+  if (itemById.get(state.items.find(i=>i.instanceId===producerId)?.definitionId ?? '')?.kind!=='producer') return {state:original,ok:false,reason:'Producer not found'};
+  const occupied=new Set(state.items.map(i=>i.cellIndex)); const cell=state.cells.find(c=>!c.locked&&!occupied.has(c.index));
+  if (!cell) return {state:original,ok:false,reason:'No free cells—merge something first'};
+  if (state.player.energy < BALANCE.producerCost) return {state:original,ok:false,reason:'Out of energy'};
+  const drop=weightedDrop(BALANCE.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
+  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=BALANCE.producerCost; state.updatedAt=now;
+  return {state,ok:true,action:'spawn',message:`Created ${itemById.get(drop.itemId)?.name}`};
+}
+
+export function ticketReady(state: GameState, ticket: Ticket): boolean {
+  const counts=new Map<string,number>(); state.items.forEach(i=>{if(itemById.get(i.definitionId)?.kind==='mergeable') counts.set(i.definitionId,(counts.get(i.definitionId)??0)+1)});
+  return ticket.requirements.every(r=>(counts.get(r.itemId)??0)>=r.quantity);
+}
+export function completeTicket(original: GameState, ticketId: string, now=Date.now()) {
+  const state=clone(original), ticket=state.tickets.find(t=>t.id===ticketId); if(!ticket) return {state:original,ok:false,reason:'Ticket not found'};
+  if(!ticketReady(state,ticket)) return {state:original,ok:false,reason:'Required items are still missing'};
+  const consumed=new Set<string>();
+  for(const req of ticket.requirements) state.items.filter(i=>i.definitionId===req.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,req.quantity).forEach(i=>consumed.add(i.instanceId));
+  state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; levelPlayer(state);
+  state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
+  return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP`};
+}
+export function unlockCell(original:GameState,index:number){const state=clone(original),cell=state.cells[index]; if(!cell?.locked)return {state:original,ok:false,reason:'Cell is already available'}; const cost=cell.unlockCost??0;if(state.player.credits<cost)return{state:original,ok:false,reason:`Need ${cost} credits`};state.player.credits-=cost;cell.locked=false;state.updatedAt=Date.now();return{state,ok:true,action:'unlock',message:'Board space unlocked'};}
+
+export function validateState(state:GameState):string[]{const errors:string[]=[];const ids=new Set<string>(),cells=new Set<number>();for(const item of state.items){if(ids.has(item.instanceId))errors.push('Duplicate item ID');ids.add(item.instanceId);if(cells.has(item.cellIndex))errors.push('Duplicate occupancy');cells.add(item.cellIndex);if(!itemById.has(item.definitionId))errors.push('Unknown item');}if(state.cells.length!==63)errors.push('Invalid board');for(const value of [state.player.energy,state.player.credits,state.player.xp,state.player.level])if(!Number.isFinite(value)||value<0)errors.push('Invalid player value');return errors;}
+export function catalogErrors(){const ids=new Set<string>();const errors:string[]=[];for(const item of itemCatalog){if(ids.has(item.id))errors.push(`Duplicate ${item.id}`);ids.add(item.id);if(item.nextItemId&&!itemById.has(item.nextItemId))errors.push(`Missing ${item.nextItemId}`)}return errors;}
