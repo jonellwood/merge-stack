@@ -67,6 +67,8 @@ export function createGame(now = Date.now()): GameState {
 
 export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
   let changed=false;
+  const gatedProducerIds=new Set(producerCatalog.filter(producer=>state.player.level<producer.unlockLevel).map(producer=>producer.itemId));
+  if(state.items.some(item=>gatedProducerIds.has(item.definitionId))){state.items=state.items.filter(item=>!gatedProducerIds.has(item.definitionId));changed=true}
   for(const producer of producerCatalog){
     if(state.player.level<producer.unlockLevel||state.items.some(item=>item.definitionId===producer.itemId))continue;
     const occupied=new Set(state.items.map(item=>item.cellIndex));
@@ -74,7 +76,7 @@ export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
     if(!cell)cell=state.cells.find(candidate=>candidate.locked&&!occupied.has(candidate.index));
     if(!cell)continue;
     cell.locked=false;cell.unlockCost=undefined;
-    state.items.push({instanceId:makeId(),definitionId:producer.itemId,cellIndex:cell.index,createdAt:now});changed=true;
+    state.items.push({instanceId:makeId(),definitionId:producer.itemId,cellIndex:cell.index,createdAt:now,state:producer.burstCapacity?{activationsRemaining:producer.burstCapacity}:undefined});changed=true;
   }
   return changed;
 }
@@ -111,11 +113,23 @@ export function activateProducer(original: GameState, producerId: string, random
   const producerItem=state.items.find(item=>item.instanceId===producerId);
   const producer=producerByItemId.get(producerItem?.definitionId??'');
   if(!producer||state.player.level<producer.unlockLevel) return {state:original,ok:false,reason:'Producer not found'};
+  if(producer.activeFrom!==undefined&&now<producer.activeFrom) return {state:original,ok:false,reason:'This event has not started yet'};
+  if(producer.activeUntil!==undefined&&now>=producer.activeUntil) return {state:original,ok:false,reason:'This event has ended'};
+  if(producer.burstCapacity&&producer.cooldownMs&&producerItem){
+    producerItem.state??={activationsRemaining:producer.burstCapacity};
+    if(producerItem.state.cooldownUntil&&now>=producerItem.state.cooldownUntil){producerItem.state.activationsRemaining=producer.burstCapacity;delete producerItem.state.cooldownUntil}
+    if((producerItem.state.activationsRemaining??producer.burstCapacity)<=0)return {state:original,ok:false,reason:'Event pipeline is cooling down'};
+  }
   const occupied=new Set(state.items.map(i=>i.cellIndex)); const cell=state.cells.find(c=>!c.locked&&!occupied.has(c.index));
   if (!cell) return {state:original,ok:false,reason:'No free cells—merge something first'};
   if (state.player.energy < producer.energyCost) return {state:original,ok:false,reason:`Need ${producer.energyCost} energy`};
   const drop=weightedDrop(producer.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
   state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=producer.energyCost;if(spendingFromFull)state.player.energyUpdatedAt=now; state.updatedAt=now;
+  if(producer.burstCapacity&&producer.cooldownMs&&producerItem){
+    producerItem.state??={activationsRemaining:producer.burstCapacity};
+    producerItem.state.activationsRemaining=Math.max(0,(producerItem.state.activationsRemaining??producer.burstCapacity)-1);
+    if(producerItem.state.activationsRemaining===0)producerItem.state.cooldownUntil=now+producer.cooldownMs;
+  }
   return {state,ok:true,action:'spawn',message:`Created ${itemById.get(drop.itemId)?.name}`};
 }
 

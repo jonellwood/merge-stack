@@ -4,7 +4,8 @@ export interface ItemDefinition {
   id: string; name: string; description: string; chainId?: string; level?: number;
   nextItemId?: string; kind: ItemKind; icon: string; mergeable: boolean; tags: string[];
 }
-export interface BoardItem { instanceId: string; definitionId: string; cellIndex: number; createdAt: number; }
+export interface BoardItemState { activationsRemaining?: number; cooldownUntil?: number; }
+export interface BoardItem { instanceId: string; definitionId: string; cellIndex: number; createdAt: number; state?: BoardItemState; }
 export interface BoardCell { index: number; locked: boolean; unlockCost?: number; }
 export interface PlayerState { id: 'local-player'; credits: number; xp: number; level: number; energy: number; maxEnergy: number; energyUpdatedAt: number; }
 export interface Requirement { itemId: string; quantity: number; }
