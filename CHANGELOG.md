@@ -26,3 +26,4 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Added the Supabase account and cloud-save foundation: optional browser authentication, protected Postgres schema, revision-controlled snapshot repository, future command outbox, and environment setup documentation.
 - Added first-login local/cloud reconciliation, per-device revision metadata, automatic linked snapshot updates, and conflict-safe stale-revision handling.
 - Added board-level reservation highlights and accessible badges for the exact item instances consumable by ready support tickets.
+- Extended ticket highlighting to available partial requirements before the full ticket becomes resolvable.

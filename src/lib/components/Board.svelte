@@ -2,13 +2,13 @@
   import type { GameState, BoardItem } from '$lib/domain/types';
   import { itemById } from '$lib/catalogs/items';
   import { producerByItemId } from '$lib/catalogs/producers';
-  import { itemsForTicket } from '$lib/domain/game';
+  import { itemsContributingToTicket } from '$lib/domain/game';
   import { actions, notice } from '$lib/state/game-store';
   let { state: gameState }: {state:GameState}=$props();
   let dragging=$state<string|null>(null), over=$state<number|null>(null), selected=$state<string|null>(null), info=$state<string|null>(null);
   let energyWarning=$state(0);
   let energyWarningTimer:ReturnType<typeof setTimeout>;
-  let ticketItemIds=$derived(new Set(gameState.tickets.flatMap(ticket=>itemsForTicket(gameState,ticket).map(item=>item.instanceId))));
+  let ticketItemIds=$derived(new Set(gameState.tickets.flatMap(ticket=>itemsContributingToTicket(gameState,ticket).map(item=>item.instanceId))));
   function showEnergyWarning(){clearTimeout(energyWarningTimer);energyWarning++;energyWarningTimer=setTimeout(()=>energyWarning=0,2_600)}
   const itemAt=(index:number)=>gameState.items.find(i=>i.cellIndex===index);
   const mergeTarget=(index:number)=>{const source=gameState.items.find(i=>i.instanceId===dragging);const target=itemAt(index);return !!source&&!!target&&source.definitionId===target.definitionId&&!!itemById.get(source.definitionId)?.nextItemId};
@@ -37,7 +37,7 @@
       {@const definition=item && itemById.get(item.definitionId)}
       {@const producerConfig=definition?.kind==='producer'?producerByItemId.get(definition.id):undefined}
       {@const reservedForTicket=!!item&&ticketItemIds.has(item.instanceId)}
-      <button class:locked={cell.locked} class:occupied={!!item} class:producer={definition?.kind==='producer'} class:ticket-reserved={reservedForTicket} class:infrastructure={definition?.id==='infrastructure_workbench'} class:energy-empty={!!producerConfig&&gameState.player.energy<producerConfig.energyCost} class:denied-a={definition?.kind==='producer'&&energyWarning>0&&energyWarning%2===1} class:denied-b={definition?.kind==='producer'&&energyWarning>0&&energyWarning%2===0} class:drag-over={over===cell.index} class:merge-over={over===cell.index&&mergeTarget(cell.index)} class:selected={item?.instanceId===selected} class="cell" data-cell={cell.index} role="gridcell" aria-label={cell.locked?`Locked cell, costs ${cell.unlockCost} credits`:item?`${definition?.name}, level ${definition?.level ?? 'producer'}${reservedForTicket?', reserved for a ready support ticket':''}`:`Empty cell ${cell.index+1}`} onclick={()=>useCell(cell.index,item)}>
+      <button class:locked={cell.locked} class:occupied={!!item} class:producer={definition?.kind==='producer'} class:ticket-reserved={reservedForTicket} class:infrastructure={definition?.id==='infrastructure_workbench'} class:energy-empty={!!producerConfig&&gameState.player.energy<producerConfig.energyCost} class:denied-a={definition?.kind==='producer'&&energyWarning>0&&energyWarning%2===1} class:denied-b={definition?.kind==='producer'&&energyWarning>0&&energyWarning%2===0} class:drag-over={over===cell.index} class:merge-over={over===cell.index&&mergeTarget(cell.index)} class:selected={item?.instanceId===selected} class="cell" data-cell={cell.index} role="gridcell" aria-label={cell.locked?`Locked cell, costs ${cell.unlockCost} credits`:item?`${definition?.name}, level ${definition?.level ?? 'producer'}${reservedForTicket?', contributes to a support ticket':''}`:`Empty cell ${cell.index+1}`} onclick={()=>useCell(cell.index,item)}>
         {#if cell.locked}<span class="lock">▧<small>{cell.unlockCost}</small></span>
         {:else if item}
           <span role="presentation" class="item" class:being-dragged={dragging===item.instanceId} onpointerdown={(e)=>down(e,item)} onpointermove={move} onpointerup={up} onpointercancel={up}>

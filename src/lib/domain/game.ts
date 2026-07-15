@@ -123,9 +123,11 @@ export function ticketReady(state: GameState, ticket: Ticket): boolean {
   const counts=new Map<string,number>(); state.items.forEach(i=>{if(itemById.get(i.definitionId)?.kind==='mergeable') counts.set(i.definitionId,(counts.get(i.definitionId)??0)+1)});
   return ticket.requirements.every(r=>(counts.get(r.itemId)??0)>=r.quantity);
 }
-export function itemsForTicket(state:GameState,ticket:Ticket):BoardItem[]{
-  if(!ticketReady(state,ticket))return[];
+export function itemsContributingToTicket(state:GameState,ticket:Ticket):BoardItem[]{
   return ticket.requirements.flatMap(requirement=>state.items.filter(item=>item.definitionId===requirement.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,requirement.quantity));
+}
+export function itemsForTicket(state:GameState,ticket:Ticket):BoardItem[]{
+  return ticketReady(state,ticket)?itemsContributingToTicket(state,ticket):[];
 }
 export function completeTicket(original: GameState, ticketId: string, now=Date.now()) {
   const state=clone(original), ticket=state.tickets.find(t=>t.id===ticketId); if(!ticket) return {state:original,ok:false,reason:'Ticket not found'};
