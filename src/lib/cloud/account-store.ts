@@ -12,7 +12,7 @@ export async function initializeCloudAuth(){
   const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>cloudUser.set(session?.user??null));
   return()=>listener.subscription.unsubscribe();
 }
-export async function sendMagicLink(email:string){const supabase=getSupabase();if(!supabase)return false;const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});authMessage.set(error?error.message:'Check your email for the six-digit sign-in code.');return !error}
+export async function sendMagicLink(email:string){const supabase=getSupabase();if(!supabase)return false;const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});authMessage.set(error?error.message:'Check your email for the sign-in code.');return !error}
 export async function verifyEmailCode(email:string,token:string){const supabase=getSupabase();if(!supabase)return false;const {error}=await supabase.auth.verifyOtp({email,token,type:'email'});authMessage.set(error?error.message:'Signed in successfully.');return !error}
 export async function signInWithGoogle(){const supabase=getSupabase();if(!supabase)return;const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});if(error)authMessage.set(error.message)}
 export async function signOut(){const supabase=getSupabase();if(!supabase)return;await supabase.auth.signOut();authMessage.set('Signed out. Local progress is still available on this device.')}

@@ -29,3 +29,4 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Extended ticket highlighting to available partial requirements before the full ticket becomes resolvable.
 - Integrated the Merge Stack logo, favicon suite, installable PWA manifest, offline application shell, social artwork, and authenticated cloud-sync status styling.
 - Added PWA-friendly email OTP sign-in with a branded Supabase template and retained magic-link browser fallback.
+- Made email OTP entry compatible with configurable Supabase code lengths, including eight-digit codes.

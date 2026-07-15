@@ -33,7 +33,7 @@ The migration enables Row Level Security and creates revision-controlled saves p
 
 On first connection, the account dialog asks whether local or cloud progress should win. Linked devices then save successful changes automatically using optimistic revisions; stale or independently changed saves stop for an explicit reconciliation choice.
 
-For installed PWA sign-in, paste `supabase/email-templates/magic-link.html` into **Supabase → Authentication → Email Templates → Magic Link**. It includes both `{{ .Token }}` for entering a six-digit code directly inside the PWA and `{{ .ConfirmationURL }}` as a browser fallback.
+For installed PWA sign-in, paste `supabase/email-templates/magic-link.html` into **Supabase → Authentication → Email Templates → Magic Link**. It includes both `{{ .Token }}` for entering the verification code directly inside the PWA and `{{ .ConfirmationURL }}` as a browser fallback. The client accepts Supabase OTP lengths from 6–10 digits.
 
 ## Deploy to Netlify
 

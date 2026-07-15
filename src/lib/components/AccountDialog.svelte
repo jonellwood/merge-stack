@@ -7,7 +7,8 @@
   let email=$state(''),code=$state(''),sending=$state(false),emailSent=$state(false);
   let inspectedUser=$state<string|null>(null);
   async function submit(){if(!email||sending)return;sending=true;try{emailSent=await sendMagicLink(email)}finally{sending=false}}
-  async function verifyCode(){if(code.length!==6||sending)return;sending=true;try{await verifyEmailCode(email,code)}finally{sending=false}}
+  let validCode=$derived(/^\d{6,10}$/.test(code));
+  async function verifyCode(){if(!validCode||sending)return;sending=true;try{await verifyEmailCode(email,code)}finally{sending=false}}
   async function useLocal(){if(!$cloudUser||!$game)return;sending=true;try{await chooseLocalSave($cloudUser.id,$game,$cloudSync.cloud)}finally{sending=false}}
   async function useCloud(){if(!$cloudUser||!$cloudSync.cloud)return;sending=true;try{const state=await chooseCloudSave($cloudUser.id,$cloudSync.cloud);game.set(state);await saveGame(state)}finally{sending=false}}
   $effect(()=>{if($cloudUser&&$game&&inspectedUser!==$cloudUser.id){inspectedUser=$cloudUser.id;inspectCloudState($cloudUser.id,$game).then(async state=>{if(state){game.set(state);await saveGame(state)}})}});
@@ -32,7 +33,7 @@ PUBLIC_SUPABASE_PUBLISHABLE_KEY=…</pre><small class="account-warning">Never pl
     {:else}
       <h2 id="account-title">Save across devices</h2><p>Create an account or sign in without interrupting your local game.</p>
       {#if !emailSent}<form onsubmit={(event)=>{event.preventDefault();submit()}}><label for="account-email">EMAIL ADDRESS</label><input id="account-email" type="email" bind:value={email} autocomplete="email" placeholder="operator@example.com" required /><button disabled={sending}>{sending?'Sending…':'Email me a sign-in code'}</button></form>
-      {:else}<form class="otp-form" onsubmit={(event)=>{event.preventDefault();verifyCode()}}><label for="account-code">ENTER THE 6-DIGIT CODE</label><input id="account-code" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" bind:value={code} placeholder="000000" required /><button disabled={sending||code.length!==6}>{sending?'Verifying…':'Verify and sign in'}</button><button class="code-back" type="button" onclick={()=>{emailSent=false;code='';$authMessage=''}}>Use a different email</button></form><small class="pwa-code-note">Enter the code here to stay inside the installed app. The email link remains available as a browser fallback.</small>{/if}
+      {:else}<form class="otp-form" onsubmit={(event)=>{event.preventDefault();verifyCode()}}><label for="account-code">ENTER YOUR VERIFICATION CODE</label><input id="account-code" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="10" pattern={'[0-9]{6,10}'} bind:value={code} placeholder="00000000" aria-describedby="account-code-help" required /><small id="account-code-help" class="code-help">Enter the 6–10 digit code exactly as shown in the email.</small><button disabled={sending||!validCode}>{sending?'Verifying…':'Verify and sign in'}</button><button class="code-back" type="button" onclick={()=>{emailSent=false;code='';$authMessage=''}}>Use a different email</button></form><small class="pwa-code-note">Enter the code here to stay inside the installed app. The email link remains available as a browser fallback.</small>{/if}
       <div class="account-divider"><span>OR</span></div><button class="google-button" onclick={signInWithGoogle}>Continue with Google</button>{#if $authMessage}<p class="auth-message" aria-live="polite">{$authMessage}</p>{/if}<small class="account-note">Your current IndexedDB save will remain untouched until you choose how to reconcile it with a cloud save.</small>
     {/if}
   </div>
