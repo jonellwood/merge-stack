@@ -123,11 +123,14 @@ export function ticketReady(state: GameState, ticket: Ticket): boolean {
   const counts=new Map<string,number>(); state.items.forEach(i=>{if(itemById.get(i.definitionId)?.kind==='mergeable') counts.set(i.definitionId,(counts.get(i.definitionId)??0)+1)});
   return ticket.requirements.every(r=>(counts.get(r.itemId)??0)>=r.quantity);
 }
+export function itemsForTicket(state:GameState,ticket:Ticket):BoardItem[]{
+  if(!ticketReady(state,ticket))return[];
+  return ticket.requirements.flatMap(requirement=>state.items.filter(item=>item.definitionId===requirement.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,requirement.quantity));
+}
 export function completeTicket(original: GameState, ticketId: string, now=Date.now()) {
   const state=clone(original), ticket=state.tickets.find(t=>t.id===ticketId); if(!ticket) return {state:original,ok:false,reason:'Ticket not found'};
-  if(!ticketReady(state,ticket)) return {state:original,ok:false,reason:'Required items are still missing'};
-  const consumed=new Set<string>();
-  for(const req of ticket.requirements) state.items.filter(i=>i.definitionId===req.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,req.quantity).forEach(i=>consumed.add(i.instanceId));
+  const ticketItems=itemsForTicket(state,ticket);if(!ticketItems.length)return {state:original,ok:false,reason:'Required items are still missing'};
+  const consumed=new Set(ticketItems.map(item=>item.instanceId));
   state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0));if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now; levelPlayer(state,now);
   state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
   return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};

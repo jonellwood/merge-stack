@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activateProducer, catalogErrors, completeTicket, createGame, energyPurchaseQuote, moveOrMerge, normalizeEnergy, purchaseEnergy, repairTicketQueue, syncProgressionUnlocks, ticketReady, validateState, weightedDrop } from './game';
+import { activateProducer, catalogErrors, completeTicket, createGame, energyPurchaseQuote, itemsForTicket, moveOrMerge, normalizeEnergy, purchaseEnergy, repairTicketQueue, syncProgressionUnlocks, ticketReady, validateState, weightedDrop } from './game';
 
 describe('catalog and initial state',()=>{
   it('has continuous, unique definitions',()=>expect(catalogErrors()).toEqual([]));
@@ -20,6 +20,7 @@ describe('board commands',()=>{
 describe('tickets',()=>{
   it('consumes deterministically and grants rewards atomically',()=>{const state=createGame(0),ticket=state.tickets[0];for(const requirement of ticket.requirements)for(let n=0;n<requirement.quantity;n++)state.items.push({instanceId:`${requirement.itemId}-${n}`,definitionId:requirement.itemId,cellIndex:10+n,createdAt:n});expect(ticketReady(state,ticket)).toBe(true);const result=completeTicket(state,ticket.id,10);expect(result.ok).toBe(true);expect(result.state.tickets).toHaveLength(3);expect(result.state.player.credits).toBeGreaterThan(state.player.credits)});
   it('does nothing when requirements are absent',()=>{const state=createGame(0),before=structuredClone(state);const result=completeTicket(state,state.tickets[0].id,10);expect(result.ok).toBe(false);expect(state).toEqual(before)});
+  it('identifies the exact lowest-cell items reserved for a ready ticket',()=>{const state=createGame(0),ticket=state.tickets[0],requirement=ticket.requirements[0];state.items.push({instanceId:'later-cell',definitionId:requirement.itemId,cellIndex:12,createdAt:1},{instanceId:'first-cell',definitionId:requirement.itemId,cellIndex:8,createdAt:2});const reserved=itemsForTicket(state,ticket);expect(reserved).toHaveLength(requirement.quantity);expect(reserved[0].instanceId).toBe('first-cell')});
 });
 describe('energy economy',()=>{
   it('scales recharge prices and resets them after six hours',()=>{let state=createGame(0);state.player.energy=0;state.player.credits=10_000;let result=purchaseEnergy(state,1);expect(result.ok).toBe(true);expect(result.state.player.credits).toBe(9_800);state=result.state;state.player.energy=0;expect(energyPurchaseQuote(state,2).cost).toBe(400);const afterWindow=6*60*60*1000+2;state.player.energyUpdatedAt=afterWindow;result=purchaseEnergy(state,afterWindow);expect(result.ok).toBe(true);expect(result.state.player.credits).toBe(9_600)});
