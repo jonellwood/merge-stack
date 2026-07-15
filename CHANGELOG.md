@@ -17,3 +17,7 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Added the explicit Netlify adapter and continuous-deployment configuration.
 - Added a reduced-motion-aware confetti celebration for player level-ups.
 - Added a five-second ready countdown and gentle recurring nudge on resolvable tickets.
+- Added a hidden, read-only Content Registry for inspecting merge paths, item definitions, active tickets, requirements, and reward calculations.
+- Added a mobile Support Queue readiness indicator with a ready count and reduced-motion-aware green pulse.
+- Hid the ticket readiness countdown while preserving its delayed pulse behavior.
+- Added direct producer feedback when activation fails because energy is depleted.

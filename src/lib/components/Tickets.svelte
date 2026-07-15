@@ -35,7 +35,7 @@
           </div>
         {/each}
       </div>
-      <div class="ticket-foot"><span>◈ {ticket.rewards.credits} &nbsp; ✦ {ticket.rewards.xp} XP</span><button class:ready-nudge={ticketReady(gameState,ticket)&&remaining(ticket.id)===0} disabled={!ticketReady(gameState,ticket)||resolving!==null} onclick={()=>resolve(ticket.id)}>{resolving===ticket.id?'Closing…':ticketReady(gameState,ticket)?remaining(ticket.id)>0?`Resolve · ${remaining(ticket.id)}s`:'Resolve':'Gather items'}</button></div>
+      <div class="ticket-foot"><span>◈ {ticket.rewards.credits} &nbsp; ✦ {ticket.rewards.xp} XP</span><button class:ready-nudge={ticketReady(gameState,ticket)&&remaining(ticket.id)===0} disabled={!ticketReady(gameState,ticket)||resolving!==null} onclick={()=>resolve(ticket.id)}>{resolving===ticket.id?'Closing…':ticketReady(gameState,ticket)?'Resolve':'Gather items'}</button></div>
     </article>
   {/each}
 </section>
