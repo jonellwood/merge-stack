@@ -23,15 +23,17 @@ npm run build
 
 Merge chains live in `src/lib/catalogs/items.ts`, and balance values in `src/lib/catalogs/balance.ts`. Domain commands in `src/lib/domain/game.ts` return new state without partially mutating failed inputs. Successful commands save immediately to the `merge-stack` IndexedDB database.
 
-Saves carry `schemaVersion: 1`; future migrations should increment the Dexie schema and transform snapshots sequentially before validation. Development builds expose reset-save and restore-energy controls in Settings, and these are removed from production builds.
+Saves carry an explicit schema version; future migrations should increment it and transform snapshots sequentially before validation. Development builds expose reset-save and restore-energy controls in Settings, and these are removed from production builds.
 
-The MVP is fully local and deliberately excludes accounts, backend services, monetization, multiplayer, and analytics.
+The game remains local-first and deliberately excludes monetization, multiplayer, and analytics. Optional accounts add cross-device snapshot synchronization through Supabase.
 
 ## Optional Supabase cloud foundation
 
 The migration enables Row Level Security and creates revision-controlled saves plus a future command outbox.
 
 On first connection, the account dialog asks whether local or cloud progress should win. Linked devices then save successful changes automatically using optimistic revisions; stale or independently changed saves stop for an explicit reconciliation choice.
+
+For installed PWA sign-in, paste `supabase/email-templates/magic-link.html` into **Supabase → Authentication → Email Templates → Magic Link**. It includes both `{{ .Token }}` for entering a six-digit code directly inside the PWA and `{{ .ConfirmationURL }}` as a browser fallback.
 
 ## Deploy to Netlify
 

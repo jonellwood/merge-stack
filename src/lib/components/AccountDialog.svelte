@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { authMessage, cloudAvailable, cloudUser, sendMagicLink, signInWithGoogle, signOut } from '$lib/cloud/account-store';
+  import { authMessage, cloudAvailable, cloudUser, sendMagicLink, signInWithGoogle, signOut, verifyEmailCode } from '$lib/cloud/account-store';
   import { chooseCloudSave, chooseLocalSave, cloudSync, inspectCloudState } from '$lib/cloud/sync-manager';
   import { game } from '$lib/state/game-store';
   import { saveGame } from '$lib/persistence/db';
   let {onClose}:{onClose:()=>void}=$props();
-  let email=$state(''),sending=$state(false);
+  let email=$state(''),code=$state(''),sending=$state(false),emailSent=$state(false);
   let inspectedUser=$state<string|null>(null);
-  async function submit(){if(!email||sending)return;sending=true;try{await sendMagicLink(email)}finally{sending=false}}
+  async function submit(){if(!email||sending)return;sending=true;try{emailSent=await sendMagicLink(email)}finally{sending=false}}
+  async function verifyCode(){if(code.length!==6||sending)return;sending=true;try{await verifyEmailCode(email,code)}finally{sending=false}}
   async function useLocal(){if(!$cloudUser||!$game)return;sending=true;try{await chooseLocalSave($cloudUser.id,$game,$cloudSync.cloud)}finally{sending=false}}
   async function useCloud(){if(!$cloudUser||!$cloudSync.cloud)return;sending=true;try{const state=await chooseCloudSave($cloudUser.id,$cloudSync.cloud);game.set(state);await saveGame(state)}finally{sending=false}}
   $effect(()=>{if($cloudUser&&$game&&inspectedUser!==$cloudUser.id){inspectedUser=$cloudUser.id;inspectCloudState($cloudUser.id,$game).then(async state=>{if(state){game.set(state);await saveGame(state)}})}});
@@ -29,7 +30,10 @@
       <h2 id="account-title">Cloud setup required</h2><p>Add the project URL and publishable key to your local <code>.env</code> file, then restart the development server.</p><pre>PUBLIC_SUPABASE_URL=…
 PUBLIC_SUPABASE_PUBLISHABLE_KEY=…</pre><small class="account-warning">Never place the service-role key or database password in browser environment variables.</small>
     {:else}
-      <h2 id="account-title">Save across devices</h2><p>Create an account or sign in without interrupting your local game.</p><form onsubmit={(event)=>{event.preventDefault();submit()}}><label for="account-email">EMAIL ADDRESS</label><input id="account-email" type="email" bind:value={email} autocomplete="email" placeholder="operator@example.com" required /><button disabled={sending}>{sending?'Sending…':'Email me a sign-in link'}</button></form><div class="account-divider"><span>OR</span></div><button class="google-button" onclick={signInWithGoogle}>Continue with Google</button>{#if $authMessage}<p class="auth-message" aria-live="polite">{$authMessage}</p>{/if}<small class="account-note">Your current IndexedDB save will remain untouched until you choose how to reconcile it with a cloud save.</small>
+      <h2 id="account-title">Save across devices</h2><p>Create an account or sign in without interrupting your local game.</p>
+      {#if !emailSent}<form onsubmit={(event)=>{event.preventDefault();submit()}}><label for="account-email">EMAIL ADDRESS</label><input id="account-email" type="email" bind:value={email} autocomplete="email" placeholder="operator@example.com" required /><button disabled={sending}>{sending?'Sending…':'Email me a sign-in code'}</button></form>
+      {:else}<form class="otp-form" onsubmit={(event)=>{event.preventDefault();verifyCode()}}><label for="account-code">ENTER THE 6-DIGIT CODE</label><input id="account-code" class="otp-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" bind:value={code} placeholder="000000" required /><button disabled={sending||code.length!==6}>{sending?'Verifying…':'Verify and sign in'}</button><button class="code-back" type="button" onclick={()=>{emailSent=false;code='';$authMessage=''}}>Use a different email</button></form><small class="pwa-code-note">Enter the code here to stay inside the installed app. The email link remains available as a browser fallback.</small>{/if}
+      <div class="account-divider"><span>OR</span></div><button class="google-button" onclick={signInWithGoogle}>Continue with Google</button>{#if $authMessage}<p class="auth-message" aria-live="polite">{$authMessage}</p>{/if}<small class="account-note">Your current IndexedDB save will remain untouched until you choose how to reconcile it with a cloud save.</small>
     {/if}
   </div>
 </div>
