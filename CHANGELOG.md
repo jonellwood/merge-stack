@@ -21,3 +21,5 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Added a mobile Support Queue readiness indicator with a ready count and reduced-motion-aware green pulse.
 - Hid the ticket readiness countdown while preserving its delayed pulse behavior.
 - Added direct producer feedback when activation fails because energy is depleted.
+- Added the level-4 Infrastructure Workbench, a seven-level server chain, distinct weighted drops and energy cost, infrastructure tickets, and automatic unlock repair for eligible saves.
+- Added difficulty-scaled ticket energy rewards and a persisted six-hour emergency recharge economy with escalating prices and a full-board discount.

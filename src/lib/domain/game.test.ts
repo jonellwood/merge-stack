@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activateProducer, catalogErrors, completeTicket, createGame, moveOrMerge, normalizeEnergy, repairTicketQueue, ticketReady, validateState, weightedDrop } from './game';
+import { activateProducer, catalogErrors, completeTicket, createGame, energyPurchaseQuote, moveOrMerge, normalizeEnergy, purchaseEnergy, repairTicketQueue, syncProgressionUnlocks, ticketReady, validateState, weightedDrop } from './game';
 
 describe('catalog and initial state',()=>{
   it('has continuous, unique definitions',()=>expect(catalogErrors()).toEqual([]));
@@ -10,6 +10,7 @@ describe('energy and spawning',()=>{
   it('normalizes elapsed time and clamps at maximum',()=>{const state=createGame(0);state.player.energy=90;normalizeEnergy(state,30*120_000);expect(state.player.energy).toBe(100)});
   it('selects weighted boundaries and ignores invalid weights',()=>{const choices=[{id:'a',weight:3},{id:'bad',weight:0},{id:'b',weight:1}];expect(weightedDrop(choices,()=>0)?.id).toBe('a');expect(weightedDrop(choices,()=>.999)?.id).toBe('b')});
   it('spends energy only after a successful spawn',()=>{const state=createGame(0),producer=state.items[0];const result=activateProducer(state,producer.instanceId,()=>0,1);expect(result.ok).toBe(true);expect(result.state.player.energy).toBe(99);expect(result.state.items.some(i=>i.definitionId==='character')).toBe(true)});
+  it('unlocks the infrastructure producer at level 4 with its own drops and cost',()=>{const state=createGame(0);state.player.level=4;expect(syncProgressionUnlocks(state,1)).toBe(true);const producer=state.items.find(item=>item.definitionId==='infrastructure_workbench');expect(producer).toBeDefined();const result=activateProducer(state,producer!.instanceId,()=>0,2);expect(result.ok).toBe(true);expect(result.state.player.energy).toBe(98);expect(result.state.items.some(item=>item.definitionId==='raspberry_pi')).toBe(true)});
 });
 describe('board commands',()=>{
   it('moves, swaps, and merges without duplicate occupancy',()=>{let state=createGame(0);state.items.push({instanceId:'a',definitionId:'character',cellIndex:0,createdAt:1},{instanceId:'b',definitionId:'character',cellIndex:1,createdAt:2},{instanceId:'c',definitionId:'typo',cellIndex:2,createdAt:3});let result=moveOrMerge(state,'c',4);expect(result.action).toBe('move');result=moveOrMerge(result.state,'c',0);expect(result.action).toBe('swap');result=moveOrMerge(result.state,'a',1);expect(result.action).toBe('merge');expect(result.state.items.some(i=>i.definitionId==='string')).toBe(true);expect(validateState(result.state)).toEqual([])});
@@ -18,4 +19,9 @@ describe('board commands',()=>{
 describe('tickets',()=>{
   it('consumes deterministically and grants rewards atomically',()=>{const state=createGame(0),ticket=state.tickets[0];for(const requirement of ticket.requirements)for(let n=0;n<requirement.quantity;n++)state.items.push({instanceId:`${requirement.itemId}-${n}`,definitionId:requirement.itemId,cellIndex:10+n,createdAt:n});expect(ticketReady(state,ticket)).toBe(true);const result=completeTicket(state,ticket.id,10);expect(result.ok).toBe(true);expect(result.state.tickets).toHaveLength(3);expect(result.state.player.credits).toBeGreaterThan(state.player.credits)});
   it('does nothing when requirements are absent',()=>{const state=createGame(0),before=structuredClone(state);const result=completeTicket(state,state.tickets[0].id,10);expect(result.ok).toBe(false);expect(state).toEqual(before)});
+});
+describe('energy economy',()=>{
+  it('scales recharge prices and resets them after six hours',()=>{let state=createGame(0);state.player.energy=0;state.player.credits=10_000;let result=purchaseEnergy(state,1);expect(result.ok).toBe(true);expect(result.state.player.credits).toBe(9_800);state=result.state;state.player.energy=0;expect(energyPurchaseQuote(state,2).cost).toBe(400);const afterWindow=6*60*60*1000+2;state.player.energyUpdatedAt=afterWindow;result=purchaseEnergy(state,afterWindow);expect(result.ok).toBe(true);expect(result.state.player.credits).toBe(9_600)});
+  it('halves recharge cost after the full board is unlocked',()=>{const state=createGame(0);state.player.energy=0;state.cells.forEach(cell=>cell.locked=false);expect(energyPurchaseQuote(state,1).cost).toBe(100)});
+  it('returns ticket energy without exceeding capacity',()=>{const state=createGame(0),ticket=state.tickets[0];ticket.rewards.energy=2;state.player.energy=99;for(const req of ticket.requirements)for(let n=0;n<req.quantity;n++)state.items.push({instanceId:`reward-${req.itemId}-${n}`,definitionId:req.itemId,cellIndex:10+n,createdAt:n});const result=completeTicket(state,ticket.id,1);expect(result.state.player.energy).toBe(100)});
 });

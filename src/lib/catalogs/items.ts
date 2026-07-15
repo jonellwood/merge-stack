@@ -18,6 +18,16 @@ export const bugItems = chain('bugs', [
   ['outage','Outage','☁','Everything is fine, except the service.'], ['incident','Incident','⚠','A calendar invitation with urgency.'],
   ['major_incident','Major Incident','🔥','Leadership has joined the call.'], ['hearing','Congressional Hearing','⚖','The ultimate escalation path.']
 ]);
+export const serverItems = chain('servers', [
+  ['raspberry_pi','Raspberry Pi','π','A tiny computer with enormous responsibilities.'],
+  ['desktop_pc','Desktop PC','▤','A beige box promoted into infrastructure.'],
+  ['server_workstation','Server Workstation','▥','A desktop nobody is allowed to turn off.'],
+  ['rack_server','Rack Server','▦','Loud, rectangular, and business critical.'],
+  ['server_cluster','Server Cluster','⬢','Several servers agreeing to fail together.'],
+  ['data_center','Data Center','▰','A climate-controlled monument to uptime.'],
+  ['cloud_region','Cloud Region','☁','Someone else’s data center, billed creatively.']
+]);
 export const producer: ItemDefinition = { id:'workstation', name:'Junior Developer Workstation', description:'Produces code and occasional consequences.', kind:'producer', icon:'⌨', mergeable:false, tags:['producer'] };
-export const itemCatalog = [...javascriptItems, ...bugItems, producer];
+export const infrastructureProducer: ItemDefinition = { id:'infrastructure_workbench', name:'Infrastructure Workbench', description:'Produces server hardware and operational anxiety. Unlocks at player level 4.', kind:'producer', icon:'🛠', mergeable:false, tags:['producer','servers'] };
+export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, producer, infrastructureProducer];
 export const itemById = new Map(itemCatalog.map((item) => [item.id, item]));

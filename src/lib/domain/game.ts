@@ -1,5 +1,6 @@
 import { BALANCE } from '$lib/catalogs/balance';
 import { itemById, itemCatalog } from '$lib/catalogs/items';
+import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
 import type { BoardItem, GameState, Ticket } from './types';
 
@@ -31,7 +32,7 @@ export function weightedDrop<T extends { weight: number }>(choices: readonly T[]
 
 function availableTemplates(level: number) {
   const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 7);
-  return ticketTemplates.filter((template) => template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
+  return ticketTemplates.filter((template) => (template.minPlayerLevel??1)<=level && template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
 }
 export function generateTicket(state: GameState, now = Date.now()): Ticket {
   const available = availableTemplates(state.player.level);
@@ -57,15 +58,29 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 }
 
 export function createGame(now = Date.now()): GameState {
-  const state: GameState = { schemaVersion:1, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+  const state: GameState = { schemaVersion:2, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
-    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, ticketSequence:0,updatedAt:now };
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, energyShop:{windowStartedAt:null,purchases:0}, ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
   return state;
 }
 
-function levelPlayer(state: GameState) {
+export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
+  let changed=false;
+  for(const producer of producerCatalog){
+    if(state.player.level<producer.unlockLevel||state.items.some(item=>item.definitionId===producer.itemId))continue;
+    const occupied=new Set(state.items.map(item=>item.cellIndex));
+    let cell=state.cells.find(candidate=>!candidate.locked&&!occupied.has(candidate.index));
+    if(!cell)cell=state.cells.find(candidate=>candidate.locked&&!occupied.has(candidate.index));
+    if(!cell)continue;
+    cell.locked=false;cell.unlockCost=undefined;
+    state.items.push({instanceId:makeId(),definitionId:producer.itemId,cellIndex:cell.index,createdAt:now});changed=true;
+  }
+  return changed;
+}
+function levelPlayer(state: GameState,now=Date.now()) {
   state.player.level = Math.floor(state.player.xp / BALANCE.xpPerLevel) + 1;
+  syncProgressionUnlocks(state,now);
 }
 export function moveOrMerge(original: GameState, sourceId: string, targetCellIndex: number, now = Date.now()): {state:GameState;ok:boolean;reason?:string;action?:string} {
   const state=clone(original), source=state.items.find((i)=>i.instanceId===sourceId), cell=state.cells[targetCellIndex];
@@ -82,7 +97,7 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
     if (target.definitionId===source.definitionId && sourceDef?.nextItemId) {
       state.items=state.items.filter((i)=>i.instanceId!==source.instanceId&&i.instanceId!==target.instanceId);
       state.items.push({instanceId:makeId(),definitionId:sourceDef.nextItemId,cellIndex:targetCellIndex,createdAt:now});
-      state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state); action='merge';
+      state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state,now); action='merge';
     } else {
       if (itemById.get(target.definitionId)?.kind==='producer') return {state:original,ok:false,reason:'The workstation is bolted down'};
       const old=source.cellIndex; source.cellIndex=target.cellIndex; target.cellIndex=old; action='swap';
@@ -93,12 +108,14 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
 
 export function activateProducer(original: GameState, producerId: string, random=Math.random, now=Date.now()) {
   const state=clone(original); normalizeEnergy(state,now);
-  if (itemById.get(state.items.find(i=>i.instanceId===producerId)?.definitionId ?? '')?.kind!=='producer') return {state:original,ok:false,reason:'Producer not found'};
+  const producerItem=state.items.find(item=>item.instanceId===producerId);
+  const producer=producerByItemId.get(producerItem?.definitionId??'');
+  if(!producer||state.player.level<producer.unlockLevel) return {state:original,ok:false,reason:'Producer not found'};
   const occupied=new Set(state.items.map(i=>i.cellIndex)); const cell=state.cells.find(c=>!c.locked&&!occupied.has(c.index));
   if (!cell) return {state:original,ok:false,reason:'No free cells—merge something first'};
-  if (state.player.energy < BALANCE.producerCost) return {state:original,ok:false,reason:'Out of energy'};
-  const drop=weightedDrop(BALANCE.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
-  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=BALANCE.producerCost; state.updatedAt=now;
+  if (state.player.energy < producer.energyCost) return {state:original,ok:false,reason:`Need ${producer.energyCost} energy`};
+  const drop=weightedDrop(producer.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
+  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=producer.energyCost; state.updatedAt=now;
   return {state,ok:true,action:'spawn',message:`Created ${itemById.get(drop.itemId)?.name}`};
 }
 
@@ -111,9 +128,33 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
   if(!ticketReady(state,ticket)) return {state:original,ok:false,reason:'Required items are still missing'};
   const consumed=new Set<string>();
   for(const req of ticket.requirements) state.items.filter(i=>i.definitionId===req.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,req.quantity).forEach(i=>consumed.add(i.instanceId));
-  state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; levelPlayer(state);
+  state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0)); levelPlayer(state,now);
   state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
-  return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP`};
+  return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};
+}
+export function repairSaveShape(state:GameState):boolean {
+  let changed=false;
+  if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
+  for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
+  if(state.schemaVersion<2){state.schemaVersion=2;changed=true}
+  return changed;
+}
+export function energyPurchaseQuote(state:GameState,now=Date.now()){
+  const shop=state.energyShop??{windowStartedAt:null,purchases:0};
+  const expired=shop.windowStartedAt===null||now-shop.windowStartedAt>=BALANCE.energyShopWindowMs;
+  const purchases=expired?0:shop.purchases;
+  const boardComplete=state.cells.every(cell=>!cell.locked);
+  const cost=Math.round(BALANCE.energyShopBaseCost*2**Math.min(purchases,10)*(boardComplete?BALANCE.energyShopBoardDiscount:1));
+  const resetsAt=expired?null:(shop.windowStartedAt??now)+BALANCE.energyShopWindowMs;
+  return {cost,purchases,boardComplete,resetsAt};
+}
+export function purchaseEnergy(original:GameState,now=Date.now()){
+  const state=clone(original);repairSaveShape(state);normalizeEnergy(state,now);
+  if(state.player.energy>=state.player.maxEnergy)return{state:original,ok:false,reason:'Energy is already full'};
+  const quote=energyPurchaseQuote(state,now);if(state.player.credits<quote.cost)return{state:original,ok:false,reason:`Need ${quote.cost} credits`};
+  if(quote.purchases===0)state.energyShop={windowStartedAt:now,purchases:1};else state.energyShop.purchases++;
+  state.player.credits-=quote.cost;state.player.energy=state.player.maxEnergy;state.player.energyUpdatedAt=now;state.updatedAt=now;
+  return{state,ok:true,action:'energy-purchase',message:`Energy restored for ${quote.cost} credits`};
 }
 export function unlockCell(original:GameState,index:number){const state=clone(original),cell=state.cells[index]; if(!cell?.locked)return {state:original,ok:false,reason:'Cell is already available'}; const cost=cell.unlockCost??0;if(state.player.credits<cost)return{state:original,ok:false,reason:`Need ${cost} credits`};state.player.credits-=cost;cell.locked=false;state.updatedAt=Date.now();return{state,ok:true,action:'unlock',message:'Board space unlocked'};}
 
