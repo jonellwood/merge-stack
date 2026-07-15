@@ -14,13 +14,13 @@
   onMount(()=>{const timer=setInterval(()=>clock=Date.now(),1_000);return()=>clearInterval(timer)});
   function duration(ms:number){const seconds=Math.max(0,Math.ceil(ms/1000));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
   function producerLabel(item:BoardItem,producer:NonNullable<ReturnType<typeof producerByItemId.get>>){
-    if(producer.activeFrom!==undefined&&clock<producer.activeFrom)return 'EVENT SOON';
-    if(producer.activeUntil!==undefined&&clock>=producer.activeUntil)return 'EVENT ENDED';
+    if(producer.activeFrom!==undefined&&clock<producer.activeFrom)return 'SOON';
+    if(producer.activeUntil!==undefined&&clock>=producer.activeUntil)return 'ENDED';
     const coolingUntil=item.state?.cooldownUntil;
-    if(coolingUntil&&clock<coolingUntil)return `COOLDOWN ${duration(coolingUntil-clock)}`;
-    if(gameState.player.energy<producer.energyCost)return 'ENERGY DEPLETED';
-    if(producer.burstCapacity){const remaining=coolingUntil&&clock>=coolingUntil?producer.burstCapacity:(item.state?.activationsRemaining??producer.burstCapacity);return `${producer.actionLabel} · ${remaining}/${producer.burstCapacity}`}
-    return producer.actionLabel;
+    if(coolingUntil&&clock<coolingUntil)return `↻ ${duration(coolingUntil-clock)}`;
+    if(gameState.player.energy<producer.energyCost)return 'NO ENERGY';
+    if(producer.burstCapacity){const remaining=coolingUntil&&clock>=coolingUntil?producer.burstCapacity:(item.state?.activationsRemaining??producer.burstCapacity);return `DEPLOY · ${remaining}/${producer.burstCapacity}`}
+    return producer.itemId==='infrastructure_workbench'?'PROVISION':'COMPILE';
   }
   function showEnergyWarning(){clearTimeout(energyWarningTimer);energyWarning++;energyWarningTimer=setTimeout(()=>energyWarning=0,2_600)}
   const itemAt=(index:number)=>gameState.items.find(i=>i.cellIndex===index);
