@@ -29,9 +29,9 @@ The MVP is fully local and deliberately excludes accounts, backend services, mon
 
 ## Optional Supabase cloud foundation
 
-Copy `.env.example` to `.env` and add the project URL and publishable key. Apply `supabase/migrations/202607150001_initial_cloud_saves.sql` through the Supabase CLI or SQL editor. The migration enables Row Level Security and creates revision-controlled saves plus a future command outbox.
+The migration enables Row Level Security and creates revision-controlled saves plus a future command outbox.
 
-Never expose a service-role key or database password through a `PUBLIC_` environment variable. On first connection, the account dialog asks whether local or cloud progress should win. Linked devices then save successful changes automatically using optimistic revisions; stale or independently changed saves stop for an explicit reconciliation choice.
+On first connection, the account dialog asks whether local or cloud progress should win. Linked devices then save successful changes automatically using optimistic revisions; stale or independently changed saves stop for an explicit reconciliation choice.
 
 ## Deploy to Netlify
 

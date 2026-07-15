@@ -27,3 +27,4 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Added first-login local/cloud reconciliation, per-device revision metadata, automatic linked snapshot updates, and conflict-safe stale-revision handling.
 - Added board-level reservation highlights and accessible badges for the exact item instances consumable by ready support tickets.
 - Extended ticket highlighting to available partial requirements before the full ticket becomes resolvable.
+- Integrated the Merge Stack logo, favicon suite, installable PWA manifest, offline application shell, social artwork, and authenticated cloud-sync status styling.

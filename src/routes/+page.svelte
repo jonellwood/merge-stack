@@ -18,7 +18,7 @@
     const interval=setInterval(actions.tick,30_000);const focus=()=>actions.tick();addEventListener('focus',focus);return()=>{disposeCloud?.();unsubscribeUser();clearTimeout(celebrationTimer);unsubscribe();clearInterval(interval);removeEventListener('focus',focus)}
   });
 </script>
-<svelte:head><title>Merge Stack — Legacy Platform Recovery</title><meta name="description" content="A JavaScript-themed merge game." /></svelte:head>
+<svelte:head><title>Merge Stack — Legacy Platform Recovery</title><meta name="description" content="A JavaScript-themed merge game." /><meta property="og:title" content="Merge Stack" /><meta property="og:description" content="Rebuild an ancient software platform one merge at a time." /><meta property="og:image" content="/ms-full.png" /><meta property="og:type" content="website" /></svelte:head>
 {#if $ready && $game}
   {@const readyTickets=$game.tickets.filter(ticket=>ticketReady($game,ticket)).length}
   <div class:contrast={$game.settings.highContrast} class:reduced={$game.settings.reducedMotion} class="app">

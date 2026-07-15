@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Merge Stack",
+  "short_name": "Merge Stack",
+  "description": "Rebuild an ancient software platform one merge at a time.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080d18",
+  "theme_color": "#0d1423",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "/ms-full.png", "sizes": "1200x900", "type": "image/png", "form_factor": "wide", "label": "Merge Stack" }
+  ]
+}
