@@ -8,6 +8,7 @@ describe('catalog and initial state',()=>{
 });
 describe('energy and spawning',()=>{
   it('normalizes elapsed time and clamps at maximum',()=>{const state=createGame(0);state.player.energy=90;normalizeEnergy(state,30*120_000);expect(state.player.energy).toBe(100)});
+  it('does not dirty an idle full energy bar',()=>{const state=createGame(0);expect(normalizeEnergy(state,120_000)).toBe(false);expect(state.player.energyUpdatedAt).toBe(0)});
   it('selects weighted boundaries and ignores invalid weights',()=>{const choices=[{id:'a',weight:3},{id:'bad',weight:0},{id:'b',weight:1}];expect(weightedDrop(choices,()=>0)?.id).toBe('a');expect(weightedDrop(choices,()=>.999)?.id).toBe('b')});
   it('spends energy only after a successful spawn',()=>{const state=createGame(0),producer=state.items[0];const result=activateProducer(state,producer.instanceId,()=>0,1);expect(result.ok).toBe(true);expect(result.state.player.energy).toBe(99);expect(result.state.items.some(i=>i.definitionId==='character')).toBe(true)});
   it('unlocks the infrastructure producer at level 4 with its own drops and cost',()=>{const state=createGame(0);state.player.level=4;expect(syncProgressionUnlocks(state,1)).toBe(true);const producer=state.items.find(item=>item.definitionId==='infrastructure_workbench');expect(producer).toBeDefined();const result=activateProducer(state,producer!.instanceId,()=>0,2);expect(result.ok).toBe(true);expect(result.state.player.energy).toBe(98);expect(result.state.items.some(item=>item.definitionId==='raspberry_pi')).toBe(true)});

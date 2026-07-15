@@ -9,8 +9,8 @@ const clone = (state: GameState): GameState => structuredClone(state);
 
 export function normalizeEnergy(state: GameState, now = Date.now()): boolean {
   if (state.player.energy >= state.player.maxEnergy) {
-    const changed = state.player.energyUpdatedAt !== now;
-    state.player.energyUpdatedAt = now;
+    const changed=state.player.energy>state.player.maxEnergy;
+    state.player.energy=state.player.maxEnergy;
     return changed;
   }
   const elapsed = Math.max(0, now - state.player.energyUpdatedAt);
@@ -107,7 +107,7 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
 }
 
 export function activateProducer(original: GameState, producerId: string, random=Math.random, now=Date.now()) {
-  const state=clone(original); normalizeEnergy(state,now);
+  const state=clone(original); normalizeEnergy(state,now);const spendingFromFull=state.player.energy>=state.player.maxEnergy;
   const producerItem=state.items.find(item=>item.instanceId===producerId);
   const producer=producerByItemId.get(producerItem?.definitionId??'');
   if(!producer||state.player.level<producer.unlockLevel) return {state:original,ok:false,reason:'Producer not found'};
@@ -115,7 +115,7 @@ export function activateProducer(original: GameState, producerId: string, random
   if (!cell) return {state:original,ok:false,reason:'No free cells—merge something first'};
   if (state.player.energy < producer.energyCost) return {state:original,ok:false,reason:`Need ${producer.energyCost} energy`};
   const drop=weightedDrop(producer.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
-  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=producer.energyCost; state.updatedAt=now;
+  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=producer.energyCost;if(spendingFromFull)state.player.energyUpdatedAt=now; state.updatedAt=now;
   return {state,ok:true,action:'spawn',message:`Created ${itemById.get(drop.itemId)?.name}`};
 }
 
@@ -128,7 +128,7 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
   if(!ticketReady(state,ticket)) return {state:original,ok:false,reason:'Required items are still missing'};
   const consumed=new Set<string>();
   for(const req of ticket.requirements) state.items.filter(i=>i.definitionId===req.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,req.quantity).forEach(i=>consumed.add(i.instanceId));
-  state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0)); levelPlayer(state,now);
+  state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0));if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now; levelPlayer(state,now);
   state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
   return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};
 }

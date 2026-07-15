@@ -23,3 +23,5 @@ Known limitation: audio has a persisted preference and interaction hooks, but no
 - Added direct producer feedback when activation fails because energy is depleted.
 - Added the level-4 Infrastructure Workbench, a seven-level server chain, distinct weighted drops and energy cost, infrastructure tickets, and automatic unlock repair for eligible saves.
 - Added difficulty-scaled ticket energy rewards and a persisted six-hour emergency recharge economy with escalating prices and a full-board discount.
+- Added the Supabase account and cloud-save foundation: optional browser authentication, protected Postgres schema, revision-controlled snapshot repository, future command outbox, and environment setup documentation.
+- Added first-login local/cloud reconciliation, per-device revision metadata, automatic linked snapshot updates, and conflict-safe stale-revision handling.
