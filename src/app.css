@@ -25,6 +25,22 @@ html{scrollbar-gutter:stable}
 .cell.producer.event-pipeline .item{background:radial-gradient(circle at 75% 20%,#3c875f55,transparent 34%),linear-gradient(145deg,#29365b,#202942);border-color:#648ba6;box-shadow:0 5px 13px #0007,0 0 16px #56d99a22}.cell.producer.event-pipeline .item strong{color:#79e7aa;text-shadow:0 0 13px #52d99677}.cell.producer.event-pipeline .producer-label{color:#8deab5}.cell.producer.event-pipeline .energy-cost{color:#a7d6c0}
 .cell.producer .item{justify-content:flex-start;padding:25px 3px 15px;overflow:hidden}.cell.producer .producer-label{top:6px;left:3px;right:3px;overflow:hidden;white-space:nowrap;text-align:center;line-height:1}.cell.producer .item strong{flex:none;font-size:clamp(20px,2.3vw,27px);line-height:1}.cell.producer .item>span{display:-webkit-box;max-width:96%;max-height:2.15em;margin-top:6px;overflow:hidden;text-align:center;line-height:1.05;-webkit-box-orient:vertical;-webkit-line-clamp:2}.cell.producer .energy-cost{z-index:2;padding:1px 2px;border-radius:3px;background:#101827b8}
 @media(max-width:480px){.cell.producer .item{padding:18px 2px 11px}.cell.producer .producer-label{top:4px;font-size:5px;letter-spacing:.2px}.cell.producer .item strong{font-size:17px}.cell.producer .item>span{display:none}.cell.producer .energy-cost{right:2px;bottom:2px;font-size:6px}}
+@media(max-width:480px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  .app{min-height:100svh}
+  .hud{width:100%;height:calc(58px + env(safe-area-inset-top));min-height:calc(58px + env(safe-area-inset-top));padding:env(safe-area-inset-top) max(6px,env(safe-area-inset-right)) 0 max(6px,env(safe-area-inset-left));overflow:hidden;flex:none}
+  .brand{min-width:0;margin-right:auto;gap:0}
+  .brand>div{display:none}
+  .brand .logo{width:32px;height:32px;flex:none;border-radius:8px}
+  .hud>.stat{min-width:0;flex:0 1 auto;padding:6px 7px;white-space:nowrap}
+  .hud>.stat b{font-size:12px}
+  .hud>.stat b small{font-size:8px}
+  .energy-stat{padding-left:7px;padding-right:7px}
+  .account-button,.settings{width:34px;min-width:34px;flex:none}
+  .account-button>i{right:4px;bottom:8px}
+  main{padding-top:9px}
+  .ticket-drawer{padding-bottom:env(safe-area-inset-bottom)}
+}
 .cell.ticket-reserved{border-color:#53bda9;background:linear-gradient(145deg,#193b39,#142c30);box-shadow:inset 0 0 15px #45e5d01f,0 0 9px #45e5d020}.cell.ticket-reserved .item{border-color:#55b8a7;background:linear-gradient(145deg,#24504b,#193a3c);box-shadow:0 5px 12px #0006,0 0 13px #45e5d02b}.ticket-badge{position:absolute;z-index:2;left:3px;bottom:3px;padding:2px 3px;border-radius:3px;background:#267a6c;color:#d9fff7;font:6px DM Mono;letter-spacing:.3px;box-shadow:0 1px 5px #0008; display:none}.cell.ticket-reserved.selected .item{outline-color:var(--amber)}@media(max-width:480px){.ticket-badge{font-size:5px;left:2px;bottom:2px;padding:1px 2px}}
 .brand .logo{overflow:hidden;background:#07101f;box-shadow:0 0 22px #28dfe63d}.brand .logo img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.18)}.account-button{position:relative;transition:background .18s,border-color .18s,color .18s,box-shadow .18s}.account-button>span{font-size:18px}.account-button>i{position:absolute;right:7px;bottom:12px;width:6px;height:6px;border-radius:50%;background:#536079;border:1px solid #0d1423}.account-button.signed-in{color:#8ec1ff;background:#172a43;border-left-color:#35577b}.account-button.signed-in>i{background:#6c9fde;box-shadow:0 0 7px #6c9fde}.account-button.synced{color:#8cf3df;background:#17352f;border-left-color:#3b8275;box-shadow:inset 0 -2px #45e5d055}.account-button.synced>i{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}.account-button.syncing>i{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:account-sync 1.2s ease-in-out infinite}.account-button.sync-conflict{color:#ffb08e;background:#3a211f;border-left-color:#a46451}.account-button.sync-conflict>i{background:#ff8368;box-shadow:0 0 8px #ff8368}@keyframes account-sync{50%{opacity:.35;transform:scale(.72)}}
 .otp-input{text-align:center!important;font:700 24px DM Mono!important;letter-spacing:5px!important;color:var(--cyan)!important}.code-help{display:block;margin-top:6px;color:#72819a;font:7px DM Mono;letter-spacing:0}.account-dialog form .code-back{margin-top:7px;border-color:#3d4b63;background:transparent;color:#8491a8}.pwa-code-note{display:block;margin-top:10px!important;color:#82a39e!important;letter-spacing:0!important;line-height:1.5}.otp-form+.pwa-code-note{font-size:8px}
