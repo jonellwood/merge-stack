@@ -13,3 +13,8 @@ export const MATCHDAY_EVENT = {
   ]
 } as const;
 
+export const MATCHDAY_REDEMPTION = {
+  itemId: 'championship_dashboard',
+  energy: 50,
+  credits: 500
+} as const;

@@ -1,4 +1,5 @@
 import { BALANCE } from '$lib/catalogs/balance';
+import { MATCHDAY_REDEMPTION } from '$lib/catalogs/events';
 import { itemById, itemCatalog } from '$lib/catalogs/items';
 import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
@@ -150,6 +151,20 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
   state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0));if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now; levelPlayer(state,now);
   state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
   return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};
+}
+export function redeemEventItem(original:GameState,itemId:string,reward:'energy'|'credits',now=Date.now()){
+  const item=original.items.find(candidate=>candidate.instanceId===itemId);
+  if(!item||item.definitionId!==MATCHDAY_REDEMPTION.itemId)return{state:original,ok:false,reason:'Event reward not found'};
+  if(reward==='energy'&&original.player.energy>=original.player.maxEnergy)return{state:original,ok:false,reason:'Energy is already full'};
+  const state=clone(original);
+  state.items=state.items.filter(candidate=>candidate.instanceId!==itemId);
+  if(reward==='energy'){
+    state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+MATCHDAY_REDEMPTION.energy);
+    if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now;
+  }else state.player.credits+=MATCHDAY_REDEMPTION.credits;
+  state.updatedAt=now;
+  const amount=reward==='energy'?`${MATCHDAY_REDEMPTION.energy} energy`:`${MATCHDAY_REDEMPTION.credits} credits`;
+  return{state,ok:true,action:'event-redemption',message:`Goal redeemed: +${amount}`};
 }
 export function repairSaveShape(state:GameState):boolean {
   let changed=false;

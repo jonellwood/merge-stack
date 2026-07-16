@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { activateProducer, completeTicket, createGame, moveOrMerge, normalizeEnergy, purchaseEnergy, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, unlockCell, validateState } from '$lib/domain/game';
+import { activateProducer, completeTicket, createGame, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, unlockCell, validateState } from '$lib/domain/game';
 import type { GameState } from '$lib/domain/types';
 import { deleteSave, loadSave, saveGame } from '$lib/persistence/db';
 import { queueCloudSnapshot } from '$lib/cloud/sync-manager';
@@ -22,6 +22,7 @@ export const actions = {
   move:(id:string,cell:number)=>{const state=get(game);return state?commit(moveOrMerge(state,id,cell)):Promise.resolve(false)},
   produce:(id:string)=>{const state=get(game);return state?commit(activateProducer(state,id)):Promise.resolve(false)},
   ticket:(id:string)=>{const state=get(game);return state?commit(completeTicket(state,id)):Promise.resolve(false)},
+  redeemEvent:(id:string,reward:'energy'|'credits')=>{const state=get(game);return state?commit(redeemEventItem(state,id,reward)):Promise.resolve(false)},
   unlock:(index:number)=>{const state=get(game);return state?commit(unlockCell(state,index)):Promise.resolve(false)},
   buyEnergy:()=>{const state=get(game);return state?commit(purchaseEnergy(state)):Promise.resolve(false)},
   setting:async (key:'sound'|'reducedMotion'|'highContrast',value:boolean)=>{const state=get(game);if(!state)return;const next=structuredClone(state);next.settings[key]=value;next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},
