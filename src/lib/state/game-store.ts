@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { activateProducer, cashoutExpiredMatchday, completeTicket, createGame, discardItem, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
+import { activateProducer, cashoutExpiredHackathon, completeTicket, createGame, discardItem, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
 import type { GameState } from '$lib/domain/types';
 import { deleteSave, loadSave, saveGame } from '$lib/persistence/db';
 import { queueCloudSnapshot } from '$lib/cloud/sync-manager';
@@ -23,7 +23,7 @@ export const actions = {
   produce:(id:string)=>{const state=get(game);return state?commit(activateProducer(state,id)):Promise.resolve(false)},
   ticket:(id:string)=>{const state=get(game);return state?commit(completeTicket(state,id)):Promise.resolve(false)},
   redeemEvent:(id:string,reward:'energy'|'credits')=>{const state=get(game);return state?commit(redeemEventItem(state,id,reward)):Promise.resolve(false)},
-  cashoutMatchday:()=>{const state=get(game);return state?commit(cashoutExpiredMatchday(state)):Promise.resolve(false)},
+  cashoutHackathon:()=>{const state=get(game);return state?commit(cashoutExpiredHackathon(state)):Promise.resolve(false)},
   discard:(id:string)=>{const state=get(game);return state?commit(discardItem(state,id)):Promise.resolve(false)},
   tidy:()=>{const state=get(game);return state?commit(tidyBoard(state)):Promise.resolve(false)},
   unlock:(index:number)=>{const state=get(game);return state?commit(unlockCell(state,index)):Promise.resolve(false)},

@@ -1,5 +1,5 @@
 import { BALANCE } from '$lib/catalogs/balance';
-import { MATCHDAY_CASHOUT_CREDITS, MATCHDAY_EVENT, MATCHDAY_REDEMPTION } from '$lib/catalogs/events';
+import { HACKATHON_CASHOUT_CREDITS, HACKATHON_EVENT, HACKATHON_REDEMPTION } from '$lib/catalogs/events';
 import { itemById, itemCatalog } from '$lib/catalogs/items';
 import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
@@ -155,34 +155,34 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
 }
 export function redeemEventItem(original:GameState,itemId:string,reward:'energy'|'credits',now=Date.now()){
   const item=original.items.find(candidate=>candidate.instanceId===itemId);
-  if(!item||item.definitionId!==MATCHDAY_REDEMPTION.itemId)return{state:original,ok:false,reason:'Event reward not found'};
+  if(!item||item.definitionId!==HACKATHON_REDEMPTION.itemId)return{state:original,ok:false,reason:'Event reward not found'};
   if(reward==='energy'&&original.player.energy>=original.player.maxEnergy)return{state:original,ok:false,reason:'Energy is already full'};
   const state=clone(original);
   state.items=state.items.filter(candidate=>candidate.instanceId!==itemId);
   if(reward==='energy'){
-    state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+MATCHDAY_REDEMPTION.energy);
+    state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+HACKATHON_REDEMPTION.energy);
     if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now;
-  }else state.player.credits+=MATCHDAY_REDEMPTION.credits;
+  }else state.player.credits+=HACKATHON_REDEMPTION.credits;
   state.updatedAt=now;
-  const amount=reward==='energy'?`${MATCHDAY_REDEMPTION.energy} energy`:`${MATCHDAY_REDEMPTION.credits} credits`;
+  const amount=reward==='energy'?`${HACKATHON_REDEMPTION.energy} energy`:`${HACKATHON_REDEMPTION.credits} credits`;
   return{state,ok:true,action:'event-redemption',message:`Goal redeemed: +${amount}`};
 }
-export function matchdayCashoutQuote(state:GameState){
-  const items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId==='matchday');
-  const credits=items.reduce((total,item)=>total+(MATCHDAY_CASHOUT_CREDITS[itemById.get(item.definitionId)?.level??0]??0),0);
+export function hackathonCashoutQuote(state:GameState){
+  const items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId==='hackathon');
+  const credits=items.reduce((total,item)=>total+(HACKATHON_CASHOUT_CREDITS[itemById.get(item.definitionId)?.level??0]??0),0);
   return{items:items.length,credits};
 }
-export function cashoutExpiredMatchday(original:GameState,now=Date.now()){
-  if(now<MATCHDAY_EVENT.endsAt)return{state:original,ok:false,reason:'Matchday is still active'};
-  const quote=matchdayCashoutQuote(original);if(!quote.items)return{state:original,ok:false,reason:'No Matchday items to cash out'};
-  const state=clone(original);state.items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='matchday');state.player.credits+=quote.credits;state.updatedAt=now;
-  return{state,ok:true,action:'event-cashout',message:`Matchday payout: ${quote.items} items · +${quote.credits} credits`};
+export function cashoutExpiredHackathon(original:GameState,now=Date.now()){
+  if(now<HACKATHON_EVENT.endsAt)return{state:original,ok:false,reason:'Hackathon is still active'};
+  const quote=hackathonCashoutQuote(original);if(!quote.items)return{state:original,ok:false,reason:'No Hackathon items to cash out'};
+  const state=clone(original);state.items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='hackathon');state.player.credits+=quote.credits;state.updatedAt=now;
+  return{state,ok:true,action:'event-cashout',message:`Hackathon payout: ${quote.items} items · +${quote.credits} credits`};
 }
 export function discardQuote(state:GameState,itemId:string){
   const item=state.items.find(candidate=>candidate.instanceId===itemId),definition=item&&itemById.get(item.definitionId);
   if(!item||!definition||definition.kind==='producer')return undefined;
   const level=definition.level??1;if(level<=3)return{kind:'none' as const,amount:0,level};
-  const creditOrigin=item.originProducerId==='infrastructure_workbench'||item.originProducerId==='event_pipeline'||(!item.originProducerId&&(definition.chainId==='servers'||definition.chainId==='matchday'));
+  const creditOrigin=item.originProducerId==='infrastructure_workbench'||item.originProducerId==='event_pipeline'||(!item.originProducerId&&(definition.chainId==='servers'||definition.chainId==='hackathon'));
   return creditOrigin?{kind:'credits' as const,amount:(level-3)*25,level}:{kind:'energy' as const,amount:(level-3)*2,level};
 }
 export function discardItem(original:GameState,itemId:string,now=Date.now()){

@@ -27,16 +27,16 @@ export const serverItems = chain('servers', [
   ['data_center','Data Center','▰','A climate-controlled monument to uptime.'],
   ['cloud_region','Cloud Region','☁','Someone else’s data center, billed creatively.']
 ]);
-export const matchdayItems = chain('matchday', [
-  ['touchline_log','Touchline Log','⚽','A raw match event written straight to production logs.'],
-  ['fixture_json','Fixture JSON','{⚽}','The schedule has become structured data.'],
-  ['live_match_feed','Live Match Feed','LIVE','Real-time scores with stoppage-time latency.'],
-  ['scoreboard_widget','Scoreboard Widget','2–1','A polished component that insists the match is still live.'],
-  ['tournament_api','Tournament API','{🏆}','Fixtures, tables, and heroic rate limits in one endpoint.'],
-  ['championship_dashboard','Championship Dashboard','🏆','The executive view of a perfectly deployed tournament.']
+export const hackathonItems = chain('hackathon', [
+  ['energy_drink','Energy Drink','⚡','The official fuel of sprint planning.'],
+  ['sticky_note','Sticky Note','📝','A requirement that will definitely survive the weekend.'],
+  ['wireframe','Wireframe','▧','Boxes and arrows that explain everything.'],
+  ['prototype','Prototype','⚗','Looks real until you click too fast.'],
+  ['demo_slide_deck','Demo Slide Deck','📊','Twelve slides, zero live code.'],
+  ['winning_hack','Winning Hack','🏆','The prototype that somehow worked at 4 a.m.']
 ]);
 export const producer: ItemDefinition = { id:'workstation', name:'Junior Developer Workstation', description:'Produces code and occasional consequences.', kind:'producer', icon:'⌨', mergeable:false, tags:['producer'] };
 export const infrastructureProducer: ItemDefinition = { id:'infrastructure_workbench', name:'Infrastructure Workbench', description:'Produces server hardware and operational anxiety. Unlocks at player level 7.', kind:'producer', icon:'🛠', mergeable:false, tags:['producer','servers'] };
-export const eventProducer: ItemDefinition = { id:'event_pipeline', name:'Event Deployment Pipeline', description:'A variable seasonal release train. Current deployment: Matchday, through Sunday.', kind:'producer', icon:'⚑', mergeable:false, tags:['producer','event','matchday'] };
-export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...matchdayItems, producer, infrastructureProducer, eventProducer];
+export const eventProducer: ItemDefinition = { id:'event_pipeline', name:'Event Deployment Pipeline', description:'A variable seasonal release train. Current deployment: Hackathon Weekend, through Sunday.', kind:'producer', icon:'⚑', mergeable:false, tags:['producer','event','hackathon'] };
+export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...hackathonItems, producer, infrastructureProducer, eventProducer];
 export const itemById = new Map(itemCatalog.map((item) => [item.id, item]));
