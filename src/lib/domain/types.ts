@@ -7,7 +7,7 @@ export interface ItemDefinition {
 export interface BoardItemState { activationsRemaining?: number; cooldownUntil?: number; }
 export interface BoardItem { instanceId: string; definitionId: string; cellIndex: number; createdAt: number; originProducerId?: string; state?: BoardItemState; }
 export interface BoardCell { index: number; locked: boolean; unlockCost?: number; }
-export interface PlayerState { id: 'local-player'; credits: number; xp: number; level: number; energy: number; maxEnergy: number; energyUpdatedAt: number; }
+export interface PlayerState { id: 'local-player'; credits: number; xp: number; level: number; title: string; energy: number; maxEnergy: number; energyUpdatedAt: number; }
 export interface Requirement { itemId: string; quantity: number; }
 export interface TicketTemplate { id: string; requester: string; title: string; description: string; requirements: Requirement[]; minPlayerLevel?: number; }
 export interface Ticket { id: string; requesterId: string; requester: string; title: string; description: string; requirements: Requirement[]; rewards: { credits: number; xp: number; energy: number }; status: 'active' | 'completed'; createdAt: number; }

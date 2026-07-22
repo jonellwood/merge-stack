@@ -3,6 +3,7 @@ import { HACKATHON_CASHOUT_CREDITS, HACKATHON_EVENT, HACKATHON_REDEMPTION } from
 import { itemById, itemCatalog } from '$lib/catalogs/items';
 import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
+import { playerTitle } from '$lib/catalogs/titles';
 import type { BoardItem, GameState, Ticket } from './types';
 
 export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -59,7 +60,7 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 }
 
 export function createGame(now = Date.now()): GameState {
-  const state: GameState = { schemaVersion:2, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+  const state: GameState = { schemaVersion:2, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
     items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, energyShop:{windowStartedAt:null,purchases:0}, ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
@@ -81,9 +82,27 @@ export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
   }
   return changed;
 }
+export interface LevelResult { newLevel: number; previousLevel: number; newTitle: string; previousTitle: string; promoted: boolean; }
+export function checkLevel(state: GameState): LevelResult {
+  const previousLevel = state.player.level;
+  const previousTitle = state.player.title;
+  const newLevel = Math.floor(state.player.xp / BALANCE.xpPerLevel) + 1;
+  const newTitle = playerTitle(newLevel);
+  return { newLevel, previousLevel, newTitle, previousTitle, promoted: newTitle !== previousTitle };
+}
+export function applyLevel(state: GameState, now = Date.now()): LevelResult {
+  const result = checkLevel(state);
+  state.player.level = result.newLevel;
+  state.player.title = result.newTitle;
+  if (result.promoted) {
+    state.player.energy = state.player.maxEnergy;
+    state.player.energyUpdatedAt = now;
+  }
+  syncProgressionUnlocks(state, now);
+  return result;
+}
 function levelPlayer(state: GameState,now=Date.now()) {
-  state.player.level = Math.floor(state.player.xp / BALANCE.xpPerLevel) + 1;
-  syncProgressionUnlocks(state,now);
+  applyLevel(state, now);
 }
 export function moveOrMerge(original: GameState, sourceId: string, targetCellIndex: number, now = Date.now()): {state:GameState;ok:boolean;reason?:string;action?:string} {
   const state=clone(original), source=state.items.find((i)=>i.instanceId===sourceId), cell=state.cells[targetCellIndex];
@@ -212,6 +231,7 @@ export function repairSaveShape(state:GameState):boolean {
   if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
   for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
   if(state.schemaVersion<2){state.schemaVersion=2;changed=true}
+  if(!state.player.title){state.player.title=playerTitle(state.player.level);changed=true}
   return changed;
 }
 export function energyPurchaseQuote(state:GameState,now=Date.now()){

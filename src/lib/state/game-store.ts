@@ -1,5 +1,6 @@
 import { get, writable } from 'svelte/store';
 import { activateProducer, cashoutExpiredHackathon, completeTicket, createGame, discardItem, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
+import { playerTitle, shopFlavorForLevel } from '$lib/catalogs/titles';
 import type { GameState } from '$lib/domain/types';
 import { deleteSave, loadSave, saveGame } from '$lib/persistence/db';
 import { queueCloudSnapshot } from '$lib/cloud/sync-manager';
@@ -8,13 +9,20 @@ export const game = writable<GameState | null>(null);
 export const notice = writable('Loading local save…');
 export const ready = writable(false);
 
+function promotionNotice(state: GameState): { text: string; refill?: boolean } | undefined {
+  const previous = get(game);
+  if (!previous || previous.player.title === state.player.title) return undefined;
+  return { text: `Level up! You got promoted to ${state.player.title}`, refill: true };
+}
+
 async function commit(result: {state:GameState;ok:boolean;reason?:string;message?:string;action?:string}) {
   if (!result.ok) { notice.set(result.reason ?? 'That action is unavailable'); return false; }
-  game.set(result.state); notice.set(result.message ?? (result.action==='merge' ? 'Merge complete' : 'Board updated')); await saveGame(result.state); queueCloudSnapshot(result.state); return true;
+  const promotion = promotionNotice(result.state);
+  game.set(result.state); notice.set(promotion?.text ?? result.message ?? (result.action==='merge' ? 'Merge complete' : 'Board updated')); await saveGame(result.state); queueCloudSnapshot(result.state); return true;
 }
 export async function initialize() {
   try {
-    const saved=await loadSave(); const state=saved && validateState(saved).length===0 ? saved : createGame(); const repaired=repairSaveShape(state),energyChanged=normalizeEnergy(state); const progressionChanged=syncProgressionUnlocks(state),ticketsChanged=repairTicketQueue(state); if(repaired||energyChanged||progressionChanged||ticketsChanged)state.updatedAt=Date.now(); game.set(state); await saveGame(state); notice.set(progressionChanged?'Infrastructure Workbench unlocked!':saved?'Welcome back, operator.':'Workstation online. Tap it to generate code.');
+    const saved=await loadSave(); const state=saved && validateState(saved).length===0 ? saved : createGame(); const repaired=repairSaveShape(state),energyChanged=normalizeEnergy(state); const progressionChanged=syncProgressionUnlocks(state),ticketsChanged=repairTicketQueue(state); if(repaired||energyChanged||progressionChanged||ticketsChanged)state.updatedAt=Date.now(); game.set(state); await saveGame(state); notice.set(progressionChanged?'Infrastructure Workbench unlocked!':saved?`Welcome back, ${state.player.title.toLowerCase()}.`:'Workstation online. Tap it to generate code.');
   } catch { const state=createGame(); game.set(state); notice.set('The old save could not be loaded. A safe new board was created.'); }
   ready.set(true);
 }

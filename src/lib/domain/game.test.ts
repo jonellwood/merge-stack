@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { activateProducer, cashoutExpiredHackathon, catalogErrors, completeTicket, createGame, discardItem, energyPurchaseQuote, itemsContributingToTicket, itemsForTicket, hackathonCashoutQuote, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairTicketQueue, syncProgressionUnlocks, ticketReady, tidyBoard, validateState, weightedDrop } from './game';
+import { playerTitle, shopFlavorForLevel, titleForLevel } from '$lib/catalogs/titles';
+import { activateProducer, applyLevel, cashoutExpiredHackathon, catalogErrors, checkLevel, completeTicket, createGame, discardItem, energyPurchaseQuote, itemsContributingToTicket, itemsForTicket, hackathonCashoutQuote, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, ticketReady, tidyBoard, validateState, weightedDrop } from './game';
 
 describe('catalog and initial state',()=>{
   it('has continuous, unique definitions',()=>expect(catalogErrors()).toEqual([]));
   it('creates a valid board and three different tickets',()=>{const state=createGame(1000);expect(state.cells).toHaveLength(63);expect(state.tickets).toHaveLength(3);expect(new Set(state.tickets.map(ticket=>ticket.title)).size).toBe(3);expect(validateState(state)).toEqual([])});
   it('repairs duplicate tickets from an existing save',()=>{const state=createGame(1000);state.tickets=[state.tickets[0],structuredClone(state.tickets[0]),structuredClone(state.tickets[0])];expect(repairTicketQueue(state,2000)).toBe(true);expect(new Set(state.tickets.map(ticket=>ticket.title)).size).toBe(3)});
+});
+describe('titles and promotion',()=>{
+  it('assigns the starting title to new games',()=>{const state=createGame(0);expect(state.player.title).toBe('Intern')});
+  it('repairs missing titles from old saves',()=>{const state=createGame(0);delete (state.player as {title?:string}).title;expect(repairSaveShape(state)).toBe(true);expect(state.player.title).toBe('Intern')});
+  it('promotes through the startup ladder by level',()=>{expect(playerTitle(1)).toBe('Intern');expect(playerTitle(5)).toBe('Code Monkey');expect(playerTitle(30)).toBe('10x Engineer');expect(playerTitle(100)).toBe('Platform Legend');expect(playerTitle(230)).toBe('Angel Investor');expect(playerTitle(450)).toBe('Shadow CTO')});
+  it('reports promotion when a title threshold is crossed',()=>{const state=createGame(0);state.player.xp=400;state.player.level=4;state.player.title=playerTitle(4);state.player.energy=10;const result=applyLevel(state);expect(result.promoted).toBe(true);expect(result.newTitle).toBe('Code Monkey')});
+  it('refills energy on promotion',()=>{const state=createGame(0);state.player.xp=400;state.player.level=4;state.player.title=playerTitle(4);state.player.energy=10;applyLevel(state);expect(state.player.energy).toBe(state.player.maxEnergy)});
+  it('does not refill energy on a plain level gain',()=>{const state=createGame(0);state.player.xp=150;state.player.level=1;state.player.title='Intern';state.player.energy=10;const result=applyLevel(state);expect(result.promoted).toBe(false);expect(state.player.energy).toBe(10)});
+  it('does not report promotion when only the level number changes',()=>{const state=createGame(0);state.player.xp=150;state.player.level=1;state.player.title='Intern';const result=applyLevel(state);expect(result.promoted).toBe(false);expect(result.newLevel).toBe(2)});
+  it('provides a shop flavor for every defined tier',()=>{for(const tier of [1,5,10,15,20,25,30,40,50,65,80,100,125,155,190,230,275,325,385,450])expect(shopFlavorForLevel(tier).length).toBeGreaterThan(0)});
 });
 describe('energy and spawning',()=>{
   it('normalizes elapsed time and clamps at maximum',()=>{const state=createGame(0);state.player.energy=90;normalizeEnergy(state,30*120_000);expect(state.player.energy).toBe(100)});
