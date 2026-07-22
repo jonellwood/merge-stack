@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 import type { GameState } from '$lib/domain/types';
 import { loadCloudLink, saveCloudLink } from '$lib/persistence/db';
+import { isNativeApp } from '$lib/platform';
 import { getSupabase } from './supabase';
 import { loadCloudSave, writeCloudSnapshot, type CloudSave } from './save-repository';
 
@@ -39,6 +40,7 @@ async function pushLinkedSnapshot(userId:string,state:GameState){
   catch(error){const cloud=await loadCloudSave().catch(()=>undefined);cloudSync.set({phase:cloud?'conflict':'error',cloud,message:error instanceof Error?error.message:'Cloud sync failed'})}
 }
 export function queueCloudSnapshot(state:GameState){
+  if(isNativeApp())return;
   const snapshot=structuredClone(state);
   syncQueue=syncQueue.then(async()=>{const supabase=getSupabase();if(!supabase)return;const {data}=await supabase.auth.getSession();if(data.session?.user)await pushLinkedSnapshot(data.session.user.id,snapshot)}).catch(error=>cloudSync.set({phase:'error',message:error instanceof Error?error.message:'Cloud sync failed'}));
 }

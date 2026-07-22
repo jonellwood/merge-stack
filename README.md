@@ -44,3 +44,21 @@ The repository includes the Netlify adapter and `netlify.toml`. In Netlify, choo
 - Node.js: 22
 
 Netlify will build every pushed commit and create deploy previews for pull requests. Game saves remain local to each browser through IndexedDB, so deployments do not overwrite player progress.
+
+## Run the iOS app
+
+The Capacitor project lives in `ios/` and uses the bundle identifier `com.jonellwood.mergestack`. The native build bundles a static SvelteKit build; the regular `npm run build` command continues to use the Netlify adapter.
+
+Requirements: macOS, a complete Xcode installation, and an iOS Simulator runtime installed through Xcode.
+
+```bash
+npm install
+npm run ios:sync
+npm run ios:open
+```
+
+In Xcode, select the **App** scheme and an iPhone simulator, then press Run. After changing web code, run `npm run ios:sync` again before rebuilding in Xcode. `npm run ios:run` can also build and launch from the command line once Xcode and a simulator are configured.
+
+The Supabase public URL and publishable key are compiled from the local `.env` during `build:ios`, just as they are for the web build. Never put a Supabase service-role key in this file or in the app.
+
+The current iOS build is intentionally local-only: it does not initialize Supabase or display account and social-login controls. Game snapshots are stored through Capacitor Preferences with IndexedDB retained as a recovery copy. If an earlier simulator build has only an IndexedDB save, the first native load migrates that snapshot automatically.

@@ -1,5 +1,5 @@
 import { BALANCE } from '$lib/catalogs/balance';
-import { MATCHDAY_REDEMPTION } from '$lib/catalogs/events';
+import { MATCHDAY_CASHOUT_CREDITS, MATCHDAY_EVENT, MATCHDAY_REDEMPTION } from '$lib/catalogs/events';
 import { itemById, itemCatalog } from '$lib/catalogs/items';
 import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
@@ -99,7 +99,8 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
     const sourceDef=itemById.get(source.definitionId);
     if (target.definitionId===source.definitionId && sourceDef?.nextItemId) {
       state.items=state.items.filter((i)=>i.instanceId!==source.instanceId&&i.instanceId!==target.instanceId);
-      state.items.push({instanceId:makeId(),definitionId:sourceDef.nextItemId,cellIndex:targetCellIndex,createdAt:now});
+      const originProducerId=source.originProducerId===target.originProducerId?source.originProducerId:(source.originProducerId??target.originProducerId);
+      state.items.push({instanceId:makeId(),definitionId:sourceDef.nextItemId,cellIndex:targetCellIndex,createdAt:now,originProducerId});
       state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state,now); action='merge';
     } else {
       if (itemById.get(target.definitionId)?.kind==='producer') return {state:original,ok:false,reason:'The workstation is bolted down'};
@@ -125,7 +126,7 @@ export function activateProducer(original: GameState, producerId: string, random
   if (!cell) return {state:original,ok:false,reason:'No free cells—merge something first'};
   if (state.player.energy < producer.energyCost) return {state:original,ok:false,reason:`Need ${producer.energyCost} energy`};
   const drop=weightedDrop(producer.drops,random); if (!drop) return {state:original,ok:false,reason:'No valid drops'};
-  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now}); state.player.energy-=producer.energyCost;if(spendingFromFull)state.player.energyUpdatedAt=now; state.updatedAt=now;
+  state.items.push({instanceId:makeId(),definitionId:drop.itemId,cellIndex:cell.index,createdAt:now,originProducerId:producer.itemId}); state.player.energy-=producer.energyCost;if(spendingFromFull)state.player.energyUpdatedAt=now; state.updatedAt=now;
   if(producer.burstCapacity&&producer.cooldownMs&&producerItem){
     producerItem.state??={activationsRemaining:producer.burstCapacity};
     producerItem.state.activationsRemaining=Math.max(0,(producerItem.state.activationsRemaining??producer.burstCapacity)-1);
@@ -165,6 +166,46 @@ export function redeemEventItem(original:GameState,itemId:string,reward:'energy'
   state.updatedAt=now;
   const amount=reward==='energy'?`${MATCHDAY_REDEMPTION.energy} energy`:`${MATCHDAY_REDEMPTION.credits} credits`;
   return{state,ok:true,action:'event-redemption',message:`Goal redeemed: +${amount}`};
+}
+export function matchdayCashoutQuote(state:GameState){
+  const items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId==='matchday');
+  const credits=items.reduce((total,item)=>total+(MATCHDAY_CASHOUT_CREDITS[itemById.get(item.definitionId)?.level??0]??0),0);
+  return{items:items.length,credits};
+}
+export function cashoutExpiredMatchday(original:GameState,now=Date.now()){
+  if(now<MATCHDAY_EVENT.endsAt)return{state:original,ok:false,reason:'Matchday is still active'};
+  const quote=matchdayCashoutQuote(original);if(!quote.items)return{state:original,ok:false,reason:'No Matchday items to cash out'};
+  const state=clone(original);state.items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='matchday');state.player.credits+=quote.credits;state.updatedAt=now;
+  return{state,ok:true,action:'event-cashout',message:`Matchday payout: ${quote.items} items · +${quote.credits} credits`};
+}
+export function discardQuote(state:GameState,itemId:string){
+  const item=state.items.find(candidate=>candidate.instanceId===itemId),definition=item&&itemById.get(item.definitionId);
+  if(!item||!definition||definition.kind==='producer')return undefined;
+  const level=definition.level??1;if(level<=3)return{kind:'none' as const,amount:0,level};
+  const creditOrigin=item.originProducerId==='infrastructure_workbench'||item.originProducerId==='event_pipeline'||(!item.originProducerId&&(definition.chainId==='servers'||definition.chainId==='matchday'));
+  return creditOrigin?{kind:'credits' as const,amount:(level-3)*25,level}:{kind:'energy' as const,amount:(level-3)*2,level};
+}
+export function discardItem(original:GameState,itemId:string,now=Date.now()){
+  const quote=discardQuote(original,itemId);if(!quote)return{state:original,ok:false,reason:'That item cannot be discarded'};
+  const state=clone(original);state.items=state.items.filter(item=>item.instanceId!==itemId);
+  let awarded=quote.amount;
+  if(quote.kind==='credits')state.player.credits+=awarded;
+  if(quote.kind==='energy'){awarded=Math.min(quote.amount,state.player.maxEnergy-state.player.energy);state.player.energy+=awarded;if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now}
+  state.updatedAt=now;
+  const reward=quote.kind==='none'?'No salvage value':`+${awarded} ${quote.kind}`;
+  return{state,ok:true,action:'discard',message:`Item recycled · ${reward}`};
+}
+export function tidyBoard(original:GameState,now=Date.now()){
+  if(original.player.credits<BALANCE.tidyBoardCost)return{state:original,ok:false,reason:`Need ${BALANCE.tidyBoardCost} credits to tidy the board`};
+  const state=clone(original),producers=state.items.filter(item=>itemById.get(item.definitionId)?.kind==='producer'),producerCells=new Set(producers.map(item=>item.cellIndex));
+  const cells=state.cells.filter(cell=>!cell.locked&&!producerCells.has(cell.index)).sort((a,b)=>a.index-b.index);
+  const items=state.items.filter(item=>itemById.get(item.definitionId)?.kind==='mergeable').sort((a,b)=>{
+    const aDef=itemById.get(a.definitionId)!,bDef=itemById.get(b.definitionId)!;
+    return(aDef.level??0)-(bDef.level??0)||(aDef.chainId??'').localeCompare(bDef.chainId??'')||aDef.name.localeCompare(bDef.name)||a.createdAt-b.createdAt;
+  });
+  if(items.length>cells.length)return{state:original,ok:false,reason:'Not enough unlocked board space'};
+  items.forEach((item,index)=>item.cellIndex=cells[index].index);state.player.credits-=BALANCE.tidyBoardCost;state.updatedAt=now;
+  return{state,ok:true,action:'tidy',message:`Board tidied for ${BALANCE.tidyBoardCost} credits`};
 }
 export function repairSaveShape(state:GameState):boolean {
   let changed=false;

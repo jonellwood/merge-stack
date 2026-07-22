@@ -18,3 +18,5 @@ export const MATCHDAY_REDEMPTION = {
   energy: 50,
   credits: 500
 } as const;
+
+export const MATCHDAY_CASHOUT_CREDITS = [0,10,25,60,140,300,500] as const;

@@ -6,14 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ios": "CAPACITOR_BUILD=true vite build",
+    "ios:sync": "npm run build:ios && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios:run": "npm run build:ios && cap run ios",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.2",
     "@sveltejs/adapter-auto": "^6.0.0",
     "@sveltejs/adapter-netlify": "^6.0.4",
+    "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.37.0",
     "@sveltejs/vite-plugin-svelte": "^6.1.0",
     "@types/node": "^24.3.0",
@@ -25,6 +31,9 @@
     "vitest": "^3.2.0"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
+    "@capacitor/preferences": "^8.0.1",
     "@supabase/supabase-js": "^2.110.6",
     "dexie": "^4.2.0"
   }

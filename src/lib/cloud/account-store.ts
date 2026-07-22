@@ -1,12 +1,14 @@
 import { writable } from 'svelte/store';
 import type { User } from '@supabase/supabase-js';
 import { cloudConfigured, getSupabase } from './supabase';
+import { isNativeApp } from '$lib/platform';
 
-export const cloudAvailable=writable(cloudConfigured());
+export const cloudAvailable=writable(!isNativeApp()&&cloudConfigured());
 export const cloudUser=writable<User|null>(null);
 export const authMessage=writable('');
 
 export async function initializeCloudAuth(){
+  if(isNativeApp())return;
   const supabase=getSupabase();if(!supabase)return;
   const {data}=await supabase.auth.getSession();cloudUser.set(data.session?.user??null);
   const {data:listener}=supabase.auth.onAuthStateChange((_event,session)=>cloudUser.set(session?.user??null));
