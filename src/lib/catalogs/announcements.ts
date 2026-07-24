@@ -18,6 +18,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '🚀',
     tag: 'NEW FEATURE',
   },
+  {
+    id: 'idle-assist-contrast',
+    version: '0.3.0',
+    date: '2026-07-23',
+    headline: 'A Smarter, Brighter Board',
+    body: 'Step away for five seconds and Merge Stack will surface a ready support ticket—or gently pulse a pair that can be merged. Mobile items are also brighter, color-coded by chain, and labeled for much faster scanning.',
+    icon: '💡',
+    tag: 'QUALITY OF LIFE',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick as nextFrame } from 'svelte';
   import AccountDialog from '$lib/components/AccountDialog.svelte'; import Board from '$lib/components/Board.svelte'; import ContentRegistry from '$lib/components/ContentRegistry.svelte'; import EnergyShop from '$lib/components/EnergyShop.svelte'; import Hud from '$lib/components/Hud.svelte'; import SplashScreen from '$lib/components/SplashScreen.svelte'; import Tickets from '$lib/components/Tickets.svelte';
   import { ANNOUNCEMENTS, type Announcement } from '$lib/catalogs/announcements';
   import { getUnseenAnnouncements } from '$lib/persistence/announcements';
@@ -7,23 +7,39 @@
   import { inspectCloudState } from '$lib/cloud/sync-manager';
   import { saveGame } from '$lib/persistence/db';
   import { isNativeApp } from '$lib/platform';
-  import { ticketReady } from '$lib/domain/game';
+  import { findMergeHint, ticketReady } from '$lib/domain/game';
   import { actions, game, initialize, notice, ready } from '$lib/state/game-store';
   let settingsOpen=$state(false), ticketsOpen=$state(false), registryOpen=$state(false), energyShopOpen=$state(false), accountOpen=$state(false), resetConfirm=$state(false);
   let celebration=$state(0);
   let celebrationTitle=$state<string|null>(null);
   let splashChecked=$state(false);
   let splashAnnouncement=$state<Announcement|null>(null);
+  let idleMergeHints=$state<string[]>([]);
   const native=isNativeApp();
   const confetti=Array.from({length:30},(_,index)=>({left:4+(index*37)%92,drift:(index*53)%180-90,delay:(index%8)*.045,duration:1.65+(index%5)*.16,color:['#45e5d0','#5b8cff','#ffc760','#ff6f91','#f7f9ff'][index%5],spin:index%2?'540deg':'-540deg'}));
   $effect(()=>{if($ready&&!splashChecked){splashChecked=true;const unseen=getUnseenAnnouncements();splashAnnouncement=unseen.at(-1)??null}});
   onMount(()=>{
-    initialize();let lastLevel:number|null=null;let lastTitle:string|null=null;let celebrationTimer:ReturnType<typeof setTimeout>;let disposeCloud:(()=>void)|undefined;let currentUserId:string|undefined,latestState:import('$lib/domain/types').GameState|null=null,coordinatedUser:string|undefined;
+    initialize();let lastLevel:number|null=null;let lastTitle:string|null=null;let celebrationTimer:ReturnType<typeof setTimeout>;let idleTimer:ReturnType<typeof setTimeout>;let disposeCloud:(()=>void)|undefined;let currentUserId:string|undefined,latestState:import('$lib/domain/types').GameState|null=null,coordinatedUser:string|undefined;
     async function coordinate(){if(!currentUserId||!latestState||coordinatedUser===currentUserId)return;coordinatedUser=currentUserId;const cloudState=await inspectCloudState(currentUserId,latestState);if(cloudState){game.set(cloudState);await saveGame(cloudState)}}
+    const blocked=()=>!!(splashAnnouncement||settingsOpen||registryOpen||energyShopOpen||accountOpen);
+    async function idleAssist(){
+      if(document.hidden||blocked()||!latestState){idleTimer=setTimeout(idleAssist,1_000);return}
+      const ready=latestState.tickets.find(ticket=>ticketReady(latestState!,ticket));
+      if(ready){
+        ticketsOpen=true;await nextFrame();
+        const ticket=[...document.querySelectorAll<HTMLElement>('[data-ticket-id]')].find(element=>element.dataset.ticketId===ready.id);
+        ticket?.scrollIntoView({behavior:latestState.settings.reducedMotion?'auto':'smooth',block:'center'});
+      }else idleMergeHints=findMergeHint(latestState)??[];
+    }
+    function resetIdle(){clearTimeout(idleTimer);idleMergeHints=[];idleTimer=setTimeout(idleAssist,5_000)}
+    const interactionEvents=['pointerdown','keydown','wheel'] as const;
+    for(const event of interactionEvents)addEventListener(event,resetIdle,{passive:true});
+    const visibility=()=>{if(!document.hidden)resetIdle()};document.addEventListener('visibilitychange',visibility);
+    resetIdle();
     if(!native)initializeCloudAuth().then(dispose=>disposeCloud=dispose);
     const unsubscribeUser=native?()=>{}:cloudUser.subscribe(user=>{currentUserId=user?.id;if(!user)coordinatedUser=undefined;coordinate()});
     const unsubscribe=game.subscribe(state=>{latestState=state;coordinate();if(!state)return;if(lastLevel!==null&&state.player.level>lastLevel){celebration=state.player.level;celebrationTitle=lastTitle!==null&&lastTitle!==state.player.title?state.player.title:null;clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>{celebration=0;celebrationTitle=null},2_800)}lastLevel=state.player.level;lastTitle=state.player.title});
-    const interval=setInterval(actions.tick,30_000);const focus=()=>actions.tick();addEventListener('focus',focus);return()=>{disposeCloud?.();unsubscribeUser();clearTimeout(celebrationTimer);unsubscribe();clearInterval(interval);removeEventListener('focus',focus)}
+    const interval=setInterval(actions.tick,30_000);const focus=()=>actions.tick();addEventListener('focus',focus);return()=>{disposeCloud?.();unsubscribeUser();clearTimeout(celebrationTimer);clearTimeout(idleTimer);unsubscribe();clearInterval(interval);removeEventListener('focus',focus);for(const event of interactionEvents)removeEventListener(event,resetIdle);document.removeEventListener('visibilitychange',visibility)}
   });
 </script>
 <svelte:head><title>Merge Stack — Legacy Platform Recovery</title><meta name="description" content="A JavaScript-themed merge game." /><meta property="og:title" content="Merge Stack" /><meta property="og:description" content="Rebuild an ancient software platform one merge at a time." /><meta property="og:image" content="/ms-full.png" /><meta property="og:type" content="website" /></svelte:head>
@@ -35,7 +51,7 @@
     {/if}
     {#if splashAnnouncement}<SplashScreen announcement={splashAnnouncement} onClose={()=>splashAnnouncement=null} />{/if}
     <Hud state={$game} onSettings={()=>settingsOpen=true} onRegistry={()=>registryOpen=true} onEnergyShop={()=>energyShopOpen=true} onAccount={()=>accountOpen=true} />
-    <main><Board state={$game} /><div class:open={ticketsOpen} class="ticket-drawer"><button class:has-ready={readyTickets>0&&!ticketsOpen} class="drawer-handle" onclick={()=>ticketsOpen=!ticketsOpen} aria-label={`Support Queue, ${readyTickets>0?`${readyTickets} ready`:`${$game.tickets.length} active`}`}><span class="drawer-title">Support Queue</span><span class="drawer-count" aria-live="polite">{readyTickets>0?`${readyTickets} ready`:`${$game.tickets.length} active`}</span><b>{ticketsOpen?'↓':'↑'}</b></button><Tickets state={$game} /></div></main>
+    <main><Board state={$game} hintedItemIds={idleMergeHints} /><div class:open={ticketsOpen} class="ticket-drawer"><button class:has-ready={readyTickets>0&&!ticketsOpen} class="drawer-handle" onclick={()=>ticketsOpen=!ticketsOpen} aria-label={`Support Queue, ${readyTickets>0?`${readyTickets} ready`:`${$game.tickets.length} active`}`}><span class="drawer-title">Support Queue</span><span class="drawer-count" aria-live="polite">{readyTickets>0?`${readyTickets} ready`:`${$game.tickets.length} active`}</span><b>{ticketsOpen?'↓':'↑'}</b></button><Tickets state={$game} /></div></main>
     <footer><span>BRANCH: <b>recovery/main</b></span><div class="message" aria-live="polite"><i></i>{$notice}</div><span>LOCAL SAVE <b>● SYNCED</b></span></footer>
     {#if registryOpen}<ContentRegistry state={$game} onClose={()=>registryOpen=false} />{/if}
     {#if energyShopOpen}<EnergyShop state={$game} onClose={()=>energyShopOpen=false} />{/if}

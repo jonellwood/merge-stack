@@ -158,6 +158,16 @@ export function ticketReady(state: GameState, ticket: Ticket): boolean {
   const counts=new Map<string,number>(); state.items.forEach(i=>{if(itemById.get(i.definitionId)?.kind==='mergeable') counts.set(i.definitionId,(counts.get(i.definitionId)??0)+1)});
   return ticket.requirements.every(r=>(counts.get(r.itemId)??0)>=r.quantity);
 }
+export function findMergeHint(state:GameState):[string,string]|undefined{
+  const candidates=state.items.filter(item=>itemById.get(item.definitionId)?.nextItemId).sort((a,b)=>a.cellIndex-b.cellIndex);
+  const firstByDefinition=new Map<string,BoardItem>();
+  for(const item of candidates){
+    const first=firstByDefinition.get(item.definitionId);
+    if(first)return[first.instanceId,item.instanceId];
+    firstByDefinition.set(item.definitionId,item);
+  }
+  return undefined;
+}
 export function itemsContributingToTicket(state:GameState,ticket:Ticket):BoardItem[]{
   return ticket.requirements.flatMap(requirement=>state.items.filter(item=>item.definitionId===requirement.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,requirement.quantity));
 }

@@ -24,7 +24,7 @@
 <section class="tickets" aria-labelledby="tickets-title">
   <div class="panel-title"><div><span>INCOMING</span><h2 id="tickets-title">Support Queue</h2></div><em>{gameState.tickets.length} ACTIVE</em></div>
   {#each gameState.tickets as ticket (ticket.id)}
-    <article class:ready={ticketReady(gameState,ticket)}>
+    <article class:ready={ticketReady(gameState,ticket)} data-ticket-id={ticket.id}>
       <div class="ticket-head"><div class="avatar">{ticket.requester.slice(0,2).toUpperCase()}</div><div><small>{ticket.requester}</small><h3>{ticket.title}</h3></div></div>
       <p>{ticket.description}</p>
       <div class="requirements">

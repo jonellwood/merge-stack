@@ -31,7 +31,9 @@ export function getUnseenAnnouncements(): Announcement[] {
 
 export function markAnnouncementSeen(id: string) {
   const seen = readSeen();
-  seen.add(id);
+  const index=ANNOUNCEMENTS.findIndex(announcement=>announcement.id===id);
+  if(index>=0)for(const announcement of ANNOUNCEMENTS.slice(0,index+1))seen.add(announcement.id);
+  else seen.add(id);
   writeSeen(seen);
 }
 
