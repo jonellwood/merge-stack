@@ -59,7 +59,7 @@ import { discardQuote, itemsContributingToTicket, hackathonCashoutQuote } from '
 <section class="board-wrap" aria-labelledby="board-title">
   {#key energyWarning}{#if energyWarning>0}<div class="energy-warning" role="status"><b>⚡ Energy depleted</b><span>Workstation paused · +1 energy every 2 minutes</span></div>{/if}{/key}
   <div class="board-heading"><div><span>PRODUCTION</span><h1 id="board-title">Development Environment</h1></div><div class="board-actions"><button class="tidy-button" onclick={()=>tidyConfirm=true} disabled={gameState.player.credits<BALANCE.tidyBoardCost} aria-label={`Tidy board for ${BALANCE.tidyBoardCost} credits`}>↥ TIDY <b>◈{BALANCE.tidyBoardCost}</b></button><div class="online"><i></i> ONLINE</div></div></div>
-  <div class="board" role="grid" aria-label="7 by 9 merge board">
+  <div class="board" role="grid" tabindex="0" aria-label="7 by 9 merge board" ondblclick={(event)=>event.preventDefault()} oncontextmenu={(event)=>event.preventDefault()}>
     {#each gameState.cells as cell}
       {@const item=itemAt(cell.index)}
       {@const definition=item && itemById.get(item.definitionId)}

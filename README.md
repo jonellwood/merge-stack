@@ -2,6 +2,8 @@
 
 A local-first JavaScript-themed merge game built with SvelteKit, TypeScript, CSS Grid, Pointer Events, and Dexie/IndexedDB.
 
+Future progression, generator, and board-economy concepts are tracked in [ROADMAP.md](ROADMAP.md).
+
 ## Run
 
 ```bash
