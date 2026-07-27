@@ -13,5 +13,7 @@ export interface TicketTemplate { id: string; requester: string; title: string; 
 export interface Ticket { id: string; requesterId: string; requester: string; title: string; description: string; requirements: Requirement[]; rewards: { credits: number; xp: number; energy: number }; status: 'active' | 'completed'; createdAt: number; }
 export interface EnergyShopState { windowStartedAt: number | null; purchases: number; }
 export interface GameSettings { sound: boolean; reducedMotion: boolean; highContrast: boolean; }
-export interface GameState { schemaVersion: number; player: PlayerState; cells: BoardCell[]; items: BoardItem[]; tickets: Ticket[]; settings: GameSettings; energyShop: EnergyShopState; ticketSequence: number; updatedAt: number; }
+export interface AchievementRecord { earnedAt: number; eventId?: string; }
+export interface GameStatistics { mergesCompleted: number; ticketsCompleted: number; eventFinalsRedeemed: number; }
+export interface GameState { schemaVersion: number; player: PlayerState; cells: BoardCell[]; items: BoardItem[]; tickets: Ticket[]; settings: GameSettings; energyShop: EnergyShopState; achievements: Record<string,AchievementRecord>; statistics: GameStatistics; ticketSequence: number; updatedAt: number; }
 export interface CommandResult { ok: boolean; reason?: string; message?: string; action?: string; }

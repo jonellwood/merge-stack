@@ -9,6 +9,21 @@ import type { BoardItem, GameState, Ticket } from './types';
 export const makeId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 const clone = (state: GameState): GameState => structuredClone(state);
 
+export function evaluateAchievements(state:GameState,now=Date.now()):string[]{
+  const earned:string[]=[];
+  const award=(id:string,eventId?:string)=>{if(state.achievements[id])return;state.achievements[id]={earnedAt:now,eventId};earned.push(id)};
+  const definitions=new Set(state.items.map(item=>item.definitionId));
+  if(state.statistics.mergesCompleted>=1)award('first-merge');
+  if(state.statistics.ticketsCompleted>=1)award('first-ticket');
+  if(definitions.has('application'))award('application-shipped');
+  if(definitions.has('cloud_region'))award('cloud-architect');
+  if(state.cells.every(cell=>!cell.locked))award('full-board');
+  if(definitions.has('html_workbench'))award('html-operator');
+  if(definitions.has('production_markup'))award('html-certified');
+  if(state.statistics.eventFinalsRedeemed>=1)award('hackathon-winner',HACKATHON_EVENT.id);
+  return earned;
+}
+
 export function normalizeEnergy(state: GameState, now = Date.now()): boolean {
   if (state.player.energy >= state.player.maxEnergy) {
     const changed=state.player.energy>state.player.maxEnergy;
@@ -33,7 +48,7 @@ export function weightedDrop<T extends { weight: number }>(choices: readonly T[]
 }
 
 function availableTemplates(level: number) {
-  const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 7);
+  const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 10);
   return ticketTemplates.filter((template) => (template.minPlayerLevel??1)<=level && template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
 }
 export function generateTicket(state: GameState, now = Date.now()): Ticket {
@@ -60,9 +75,9 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 }
 
 export function createGame(now = Date.now()): GameState {
-  const state: GameState = { schemaVersion:2, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+  const state: GameState = { schemaVersion:3, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
-    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, energyShop:{windowStartedAt:null,purchases:0}, ticketSequence:0,updatedAt:now };
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, energyShop:{windowStartedAt:null,purchases:0}, achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
   return state;
 }
@@ -80,6 +95,7 @@ export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
     cell.locked=false;cell.unlockCost=undefined;
     state.items.push({instanceId:makeId(),definitionId:producer.itemId,cellIndex:cell.index,createdAt:now,state:producer.burstCapacity?{activationsRemaining:producer.burstCapacity}:undefined});changed=true;
   }
+  if(evaluateAchievements(state,now).length)changed=true;
   return changed;
 }
 export interface LevelResult { newLevel: number; previousLevel: number; newTitle: string; previousTitle: string; promoted: boolean; }
@@ -120,7 +136,7 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
       state.items=state.items.filter((i)=>i.instanceId!==source.instanceId&&i.instanceId!==target.instanceId);
       const originProducerId=source.originProducerId===target.originProducerId?source.originProducerId:(source.originProducerId??target.originProducerId);
       state.items.push({instanceId:makeId(),definitionId:sourceDef.nextItemId,cellIndex:targetCellIndex,createdAt:now,originProducerId});
-      state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state,now); action='merge';
+      state.statistics.mergesCompleted++;state.player.xp += (sourceDef.level ?? 1)*BALANCE.mergeXpMultiplier; levelPlayer(state,now);evaluateAchievements(state,now);action='merge';
     } else {
       if (itemById.get(target.definitionId)?.kind==='producer') return {state:original,ok:false,reason:'The workstation is bolted down'};
       const old=source.cellIndex; source.cellIndex=target.cellIndex; target.cellIndex=old; action='swap';
@@ -179,7 +195,7 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
   const ticketItems=itemsForTicket(state,ticket);if(!ticketItems.length)return {state:original,ok:false,reason:'Required items are still missing'};
   const consumed=new Set(ticketItems.map(item=>item.instanceId));
   state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0));if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now; levelPlayer(state,now);
-  state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
+  state.statistics.ticketsCompleted++;evaluateAchievements(state,now);state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
   return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};
 }
 export function redeemEventItem(original:GameState,itemId:string,reward:'energy'|'credits',now=Date.now()){
@@ -188,11 +204,12 @@ export function redeemEventItem(original:GameState,itemId:string,reward:'energy'
   if(reward==='energy'&&original.player.energy>=original.player.maxEnergy)return{state:original,ok:false,reason:'Energy is already full'};
   const state=clone(original);
   state.items=state.items.filter(candidate=>candidate.instanceId!==itemId);
+  state.statistics.eventFinalsRedeemed++;
   if(reward==='energy'){
     state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+HACKATHON_REDEMPTION.energy);
     if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now;
   }else state.player.credits+=HACKATHON_REDEMPTION.credits;
-  state.updatedAt=now;
+  evaluateAchievements(state,now);state.updatedAt=now;
   const amount=reward==='energy'?`${HACKATHON_REDEMPTION.energy} energy`:`${HACKATHON_REDEMPTION.credits} credits`;
   return{state,ok:true,action:'event-redemption',message:`Goal redeemed: +${amount}`};
 }
@@ -239,9 +256,12 @@ export function tidyBoard(original:GameState,now=Date.now()){
 export function repairSaveShape(state:GameState):boolean {
   let changed=false;
   if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
+  if(!state.achievements){state.achievements={};changed=true}
+  if(!state.statistics){state.statistics={mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0};changed=true}
   for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
-  if(state.schemaVersion<2){state.schemaVersion=2;changed=true}
+  if(state.schemaVersion<3){state.schemaVersion=3;changed=true}
   if(!state.player.title){state.player.title=playerTitle(state.player.level);changed=true}
+  if(evaluateAchievements(state).length)changed=true;
   return changed;
 }
 export function energyPurchaseQuote(state:GameState,now=Date.now()){
@@ -261,7 +281,7 @@ export function purchaseEnergy(original:GameState,now=Date.now()){
   state.player.credits-=quote.cost;state.player.energy=state.player.maxEnergy;state.player.energyUpdatedAt=now;state.updatedAt=now;
   return{state,ok:true,action:'energy-purchase',message:`Energy restored for ${quote.cost} credits`};
 }
-export function unlockCell(original:GameState,index:number){const state=clone(original),cell=state.cells[index]; if(!cell?.locked)return {state:original,ok:false,reason:'Cell is already available'}; const cost=cell.unlockCost??0;if(state.player.credits<cost)return{state:original,ok:false,reason:`Need ${cost} credits`};state.player.credits-=cost;cell.locked=false;state.updatedAt=Date.now();return{state,ok:true,action:'unlock',message:'Board space unlocked'};}
+export function unlockCell(original:GameState,index:number){const state=clone(original),cell=state.cells[index]; if(!cell?.locked)return {state:original,ok:false,reason:'Cell is already available'}; const cost=cell.unlockCost??0;if(state.player.credits<cost)return{state:original,ok:false,reason:`Need ${cost} credits`};state.player.credits-=cost;cell.locked=false;state.updatedAt=Date.now();evaluateAchievements(state,state.updatedAt);return{state,ok:true,action:'unlock',message:'Board space unlocked'};}
 
 export function validateState(state:GameState):string[]{const errors:string[]=[];const ids=new Set<string>(),cells=new Set<number>();for(const item of state.items){if(ids.has(item.instanceId))errors.push('Duplicate item ID');ids.add(item.instanceId);if(cells.has(item.cellIndex))errors.push('Duplicate occupancy');cells.add(item.cellIndex);if(!itemById.has(item.definitionId))errors.push('Unknown item');}if(state.cells.length!==63)errors.push('Invalid board');for(const value of [state.player.energy,state.player.credits,state.player.xp,state.player.level])if(!Number.isFinite(value)||value<0)errors.push('Invalid player value');return errors;}
 export function catalogErrors(){const ids=new Set<string>();const errors:string[]=[];for(const item of itemCatalog){if(ids.has(item.id))errors.push(`Duplicate ${item.id}`);ids.add(item.id);if(item.nextItemId&&!itemById.has(item.nextItemId))errors.push(`Missing ${item.nextItemId}`)}return errors;}

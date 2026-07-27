@@ -7,3 +7,4 @@ build/
 .env.*
 !.env.example
 npm-debug.log*
+Merge_Stack_Seasonal_Event_Ideas.md

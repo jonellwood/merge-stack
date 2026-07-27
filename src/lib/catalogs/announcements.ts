@@ -27,6 +27,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '💡',
     tag: 'QUALITY OF LIFE',
   },
+  {
+    id: 'html-workbench-badges',
+    version: '0.4.0',
+    date: '2026-07-27',
+    headline: 'Markup, Milestones & More Tickets',
+    body: 'Level 20 now deploys the HTML Workbench and an eight-level markup chain with new support requests. Every permanent chain item has a ticket use, the Badge Cabinet records your achievements, and full-board production now points directly to available capacity.',
+    icon: '🏅',
+    tag: 'CONTENT EXPANSION',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

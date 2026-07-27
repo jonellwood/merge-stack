@@ -28,6 +28,90 @@ The target feeling is: “I can solve this board, but I need a plan.”
 
 Exact unlock levels should be adjusted after measuring how long current players take to reach levels 14, 20, and 30.
 
+## Content cadence and seasonal events
+
+Permanent progression and seasonal events are separate systems, but they compete for the same player attention and board space. New permanent content can be developed while an event is active; the preferred release cadence is to launch it immediately after the event wrap-up rather than midway through an event.
+
+For the current sequence:
+
+1. Build and test the HTML Workbench while Hackathon Weekend is active.
+2. Let the Hackathon event complete and give players a clear wrap-up/cash-out moment.
+3. Release the HTML Workbench as the next permanent progression beat.
+4. Observe board occupancy and ticket completion before scheduling the CSS Selector Lab.
+
+This keeps development moving without asking players to learn and feed two new chains at the same time. An overlapping release is still acceptable for a small patch or for content unlocked well above most event participants, but it should be the exception rather than the default.
+
+The event idea catalog lives in [`ref/Merge_Stack_Seasonal_Event_Ideas.md`](ref/Merge_Stack_Seasonal_Event_Ideas.md). It supplies candidate generators, merge chains, tickets, and themes; this roadmap defines the shared mechanics all events should follow.
+
+### Event pipeline lifecycle
+
+The Event Deployment Pipeline should **not consume a board cell when no event is active**. Empty time between events should give the player their space back.
+
+Recommended lifecycle:
+
+- **Upcoming:** Show a small event notice outside the grid, but do not deploy a generator.
+- **Active:** Offer an explicit `Deploy Event Pipeline` action. Participation is optional; deploying it uses one unlocked board cell for the duration of the event.
+- **Ending soon:** Show the deadline clearly without manufacturing urgency or interrupting ordinary play.
+- **Wrap-up:** Disable new drops, preserve event items, and provide an obvious archive/cash-out action.
+- **Archived:** Remove the inactive pipeline from the grid after cash-out. If event items remain, keep wrap-up accessible from an off-board event notice so a dead generator is never required as the only exit.
+- **No active event:** Keep the pipeline in an off-board deployment bay with no board-space cost.
+
+If the future Generator Rack ships, inactive seasonal generators belong in a dedicated event bay rather than consuming ordinary rack units. Seasonal participation may create temporary space pressure, but inactivity should never create permanent pressure.
+
+### Reusable event structure
+
+Events should be data-driven rather than hard-coded around Hackathon Weekend. A reusable event definition should support:
+
+- Event identity, start/end/wrap-up dates, generator presentation, energy cost, burst size, and cooldown.
+- One or two independently configured merge chains and weighted drop tables.
+- Event-only tickets that cannot remain in the support queue after the event closes.
+- Level-scaled recycling and a guaranteed end-of-event cash-out.
+- A short completion track, event badge, and optional permanent cosmetic reward.
+- A clearly defined max-level redemption or final recipe.
+- Save-safe behavior when an event definition is added, removed, extended, or revisited.
+
+Two-chain events are the preferred long-term format because they create better decisions than a single linear chain. The second chain should add texture without relying on frustrating rarity; guaranteed-drop progress or a pity rule may be needed.
+
+### Event rollout safeguards
+
+- Never generate an event ticket before its generator is deployed and usable.
+- Stop adding event tickets early enough that players can reasonably finish them.
+- Replace unresolved event tickets with permanent tickets at wrap-up without consuming player resources.
+- Do not automatically delete event items. Present their total conversion value and require a clear archive action.
+- Never leave an ended generator occupying the only usable board space.
+- Returning versions of an event need stable item IDs or an explicit save migration.
+- Keep permanent progression rewards useful during events so ignoring an event remains a valid choice.
+
+## Achievements and badge cabinet
+
+Achievements should give players a durable history of what they accomplished without adding permanent gameplay power that newer players can never obtain. The player profile should include a **Badge Cabinet** styled like an internal certification or operations credential board.
+
+Badge families can include:
+
+- **Progression:** Reach a title tier, unlock a generator, or purchase every board cell.
+- **Merge mastery:** Create the highest-level item in a permanent chain.
+- **Support:** Resolve ticket-count milestones or complete unusually difficult requests.
+- **Operations:** Recover from a nearly full board, complete a large Tidy, or finish a high-tier infrastructure request.
+- **Event participation:** Join a seasonal event or complete part of its track.
+- **Event mastery:** Create the event’s final item, finish its ticket set, or complete its reward track.
+- **Special history:** Early-player, anniversary, beta, or one-time community badges.
+
+Limited event badges may become genuinely retired and visibly dated after an event. That exclusivity is desirable as history and identity, but retired badges should remain cosmetic. Energy capacity, production odds, storage, ticket rewards, and other gameplay advantages must not be permanently locked behind an event that future players cannot enter.
+
+### Badge behavior
+
+- Show locked silhouettes only for achievements the player can still earn; retired unearned badges should live in a separate event archive rather than taunting the player in the active checklist.
+- Store an immutable badge ID, earned timestamp, event/version ID when applicable, and optional progress counters.
+- Sync earned badges with cloud saves and preserve them through reconciliation and schema migrations.
+- Award badges atomically with the action that earns them so a crash or second device cannot duplicate or lose the result.
+- Make criteria inspectable before completion unless secrecy is the point of a deliberately hidden achievement.
+- Use a small celebration on first unlock without interrupting merges or ticket completion.
+- Allow a few favorites to be pinned to the account/profile view.
+- Keep art, names, and criteria data-driven so new events do not require a custom badge system.
+- Define retroactive criteria explicitly. Deterministic milestones may be backfilled from saved statistics; one-time event participation should not be guessed.
+
+The first event-ready set should be small: one participation badge, one final-item badge, and one completion-track badge. Permanent cosmetics can remain a separate reward from badges, allowing a badge to document the achievement while a cosmetic changes the UI.
+
 ## HTML Workbench
 
 Working concept: a permanent generator focused on increasingly structured HTML.
@@ -268,8 +352,9 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 ### Phase 1 — Content expansion
 
-- Add the HTML Workbench and chain.
+- Build the HTML Workbench and chain during the current event, then release it after the event wrap-up.
 - Add HTML ticket templates and registry content.
+- Add the badge data model and a small profile Badge Cabinet before the next seasonal event.
 - Playtest progression timing and board occupancy.
 - Add the CSS Selector Lab only after HTML balance is stable.
 

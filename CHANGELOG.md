@@ -9,6 +9,17 @@
 
 Known limitation: audio has a persisted preference and interaction hooks, but no sound assets ship in this prototype. Browser-level Playwright tests are deferred; core command behavior is unit-tested.
 
+## 0.4.0 — HTML Workbench and achievements
+
+- Added the level-20 HTML Workbench, an eight-level markup chain, a distinct three-energy weighted drop table, warm board styling, and Content Registry integration.
+- Added six HTML support-ticket templates gated behind the Workbench unlock.
+- Filled permanent late-game ticket gaps across infrastructure, bugs, and JavaScript, including two uses for Cloud Regions.
+- Added a schema-3 achievement model with durable timestamps, statistics, automatic save migration, cloud-sync compatibility, and a player-facing Badge Cabinet.
+- Added initial progression, merge, support, infrastructure, full-board, HTML, and limited Hackathon badges.
+- Added a full-board production prompt that offers the next purchasable slot or clear recovery guidance when the board is fully unlocked.
+- Corrected infrastructure tickets so they cannot appear before the Infrastructure Workbench unlocks.
+- Extended late-game ticket progression to support permanent merge items through level 10.
+
 ## 0.1.1 — Ticket and drag fixes
 
 - Added varied, progression-safe starter tickets and automatic repair for duplicate tickets already stored in local saves.
