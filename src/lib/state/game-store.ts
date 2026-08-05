@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { activateProducer, cashoutExpiredHackathon, completeTicket, createGame, discardItem, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
+import { activateProducer, cashoutExpiredHackathon, completeTicket, createGame, discardItem, expandRack, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
 import { playerTitle, shopFlavorForLevel } from '$lib/catalogs/titles';
 import { achievementById } from '$lib/catalogs/achievements';
 import type { GameState } from '$lib/domain/types';
@@ -37,6 +37,9 @@ export const actions = {
   cashoutHackathon:()=>{const state=get(game);return state?commit(cashoutExpiredHackathon(state)):Promise.resolve(false)},
   discard:(id:string)=>{const state=get(game);return state?commit(discardItem(state,id)):Promise.resolve(false)},
   tidy:()=>{const state=get(game);return state?commit(tidyBoard(state)):Promise.resolve(false)},
+  store:(id:string)=>{const state=get(game);return state?commit(storeInRack(state,id)):Promise.resolve(false)},
+  retrieve:(id:string)=>{const state=get(game);return state?commit(retrieveFromRack(state,id)):Promise.resolve(false)},
+  expandRack:()=>{const state=get(game);return state?commit(expandRack(state)):Promise.resolve(false)},
   unlock:(index:number)=>{const state=get(game);return state?commit(unlockCell(state,index)):Promise.resolve(false)},
   buyEnergy:()=>{const state=get(game);return state?commit(purchaseEnergy(state)):Promise.resolve(false)},
   setting:async (key:'sound'|'reducedMotion'|'highContrast',value:boolean)=>{const state=get(game);if(!state)return;const next=structuredClone(state);next.settings[key]=value;next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 — Server Rack storage
+
+- Added a level-18 Server Rack with 6U of included off-board storage.
+- Assigned items a derived storage size: levels 1–3 use 1U, levels 4–6 use 2U, and levels 7+ use 3U.
+- Added permanent +3U rack expansions at 250, 500, 1,000, and 2,000 credits, up to 18U.
+- Added a responsive server-cabinet interface for inspecting and returning mounted items.
+- Excluded stored items from merging, ticket delivery, and idle hints until they return to an open board cell.
+- Added confirmation before storing ticket-contributing or top-level items, plus full-board guidance into the rack.
+- Added schema-4 migration and cloud-compatible persistence for rack contents and expansion purchases.
+- Made Tidy start at 250 credits and double with every use during an independent six-hour window.
+- Added the Rack Mounted achievement and included stored seasonal items in event cash-out totals.
+
 ## 0.1.0 — Playable MVP
 
 - Added a responsive 7×9 board, JavaScript and bug chains, and the Junior Developer Workstation.

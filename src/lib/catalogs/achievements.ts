@@ -14,6 +14,7 @@ export const achievementCatalog: AchievementDefinition[] = [
   {id:'application-shipped',name:'It Works on Production',description:'Build a complete Application.',icon:'▣',category:'merge'},
   {id:'cloud-architect',name:'Cloud Architect',description:'Build a Cloud Region.',icon:'☁',category:'operations'},
   {id:'full-board',name:'Maximum Allocation',description:'Unlock every cell on the game board.',icon:'▦',category:'progression'},
+  {id:'rack-mounted',name:'Rack Mounted',description:'Store your first item in the Server Rack.',icon:'▤',category:'operations'},
   {id:'html-operator',name:'Markup Operator',description:'Deploy the HTML Workbench at level 20.',icon:'</>',category:'progression'},
   {id:'html-certified',name:'Standards Compliant',description:'Build Production Markup.',icon:'W3',category:'merge'},
   {id:'hackathon-winner',name:'Hackathon Winner',description:'Redeem a Winning Hack during Hackathon Weekend.',icon:'🏆',category:'event',eventId:'hackathon-2026'}

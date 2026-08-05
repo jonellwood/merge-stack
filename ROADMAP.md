@@ -262,16 +262,16 @@ Additional generators should increase pressure gradually.
 
 ## Server Rack storage
 
-Working concept: replace the generic game “backpack” with a visual server rack that stores items off-board.
+**Implemented in v0.5.0.** The generic game “backpack” is a visual server rack that stores items off-board and unlocks at level 18.
 
 The rack is measured in rack units (`U`) rather than slots:
 
-- Low-level items occupy `1U`.
-- Mid-level items occupy `2U`.
-- High and top-level items occupy `3U`.
+- Levels 1–3 occupy `1U`.
+- Levels 4–6 occupy `2U`.
+- Levels 7 and above occupy `3U`.
 - A stored generator chassis could occupy `4U`, or generators could use a separate deployment bay if mixing both systems becomes confusing.
 
-Starting capacity should be approximately `6U`. Players can purchase additional rack space in small increments, such as `+3U` per expansion, with sharply increasing credit costs.
+Starting capacity is `6U`. Players purchase permanent `+3U` expansions with sharply increasing credit costs.
 
 Example expansion curve:
 
@@ -289,14 +289,14 @@ The exact curve should be balanced against board-cell purchases and the Tidy fee
 
 - Present the storage UI as a vertical server cabinet with numbered U positions.
 - Render stored items as equipment mounted across one, two, or three rack rows.
-- Drag an item to an open compatible region or select an item and choose `Rack`.
+- Select an item and choose `Store` from the Rack control.
 - Stored items cannot merge, satisfy tickets, or receive idle merge hints.
 - Players must return an item to an unlocked board cell before using it.
 - Recycling directly from the rack may be allowed as a convenience.
 - Ticket requirements can indicate that a matching item exists in storage without counting it as delivered.
-- The rack must never accept an item unless enough contiguous U space exists.
+- The rack never accepts an item unless enough total U space exists.
 
-Contiguous space creates a small packing puzzle: a rack may have three free units but still lack a continuous `3U` opening. If testing shows this feels tedious, capacity can remain U-based while automatically compacting stored items.
+The first implementation automatically compacts mounted equipment. U capacity creates the intended storage decisions without adding a fragmentation puzzle that requires manual rack maintenance.
 
 ### Rack safeguards
 
@@ -364,8 +364,8 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 - Review generator unlock placement and energy costs.
 - Measure recycling, Tidy usage, failed spawns, and abandoned sessions.
 - Prototype movable-but-protected generators.
-- Implement the first `6U` Server Rack and one purchasable expansion.
-- Decide whether generators share rack capacity with ordinary items or use dedicated bays.
+- Playtest the implemented `6U` Server Rack and its four purchasable expansions.
+- Keep generators out of ordinary rack capacity until dedicated deployment bays are designed.
 
 ### Phase 3 — Recipe engine
 
@@ -396,9 +396,9 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 - Final unlock levels for HTML, CSS, branching, and the Bounty Box.
 - Whether all permanent generators occupy the board simultaneously.
-- Whether stored generators consume ordinary rack units or dedicated deployment bays.
-- Whether rack items require contiguous U space or auto-compact.
-- Final rack expansion costs and maximum capacity.
+- Design dedicated deployment bays if generator storage is added.
+- Revisit the current automatic rack compaction only if playtesting shows a meaningful benefit to manual placement.
+- Validate the current 18U maximum and 250/500/1,000/2,000-credit expansion curve.
 - Which generator currencies apply to HTML, CSS, and branching salvage.
 - Whether Render Tree is redeemable, ticketable, or retained as an achievement.
 - Whether the Bounty Box accelerates a timer, fills a separate meter, or combines both.

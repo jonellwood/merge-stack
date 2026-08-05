@@ -36,6 +36,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '🏅',
     tag: 'CONTENT EXPANSION',
   },
+  {
+    id: 'server-rack-storage',
+    version: '0.5.0',
+    date: '2026-08-05',
+    headline: 'Rack It, Stack It',
+    body: 'Level 18 now unlocks a 6U Server Rack for safe off-board storage, with permanent credit-funded expansions up to 18U. Tidy service fees now double with each use and reset after six hours.',
+    icon: '🗄️',
+    tag: 'BOARD MANAGEMENT',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {
