@@ -11,6 +11,7 @@
     "android:sync": "npm run build:android && cap sync android",
     "android:open": "cap open android",
     "android:run": "npm run build:android && cap run android",
+    "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease",
     "ios:sync": "npm run build:ios && cap sync ios",
     "ios:open": "cap open ios",
     "ios:run": "npm run build:ios && cap run ios",

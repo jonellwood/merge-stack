@@ -78,3 +78,15 @@ npm run android:open
 In Android Studio, select the connected phone and press Run. Accept the USB-debugging authorization prompt on the phone the first time it connects. After changing web code, run `npm run android:sync` before rebuilding. `npm run android:run` can build and install from the command line once the device is authorized.
 
 Like iOS, Android is intentionally local-only and stores game snapshots through Capacitor Preferences. Cloud-account and Google sign-in controls are hidden in native builds.
+
+### Build a Google Play bundle
+
+Google Play releases use a private upload key. Create `android/upload-keystore.jks`, copy `android/keystore.properties.example` to `android/keystore.properties`, and replace its password placeholders. The keystore and private properties file are ignored by Git; back both up securely because they are required for future Play uploads.
+
+With `JAVA_HOME` configured for Android Studio's bundled JDK, build the signed bundle with:
+
+```bash
+npm run android:bundle
+```
+
+The upload artifact is written to `android/app/build/outputs/bundle/release/app-release.aab`. Increase `versionCode` in `android/app/build.gradle` for every Play Store update.
