@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:android": "CAPACITOR_BUILD=true vite build",
     "build:ios": "CAPACITOR_BUILD=true vite build",
+    "android:sync": "npm run build:android && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "npm run build:android && cap run android",
     "ios:sync": "npm run build:ios && cap sync ios",
     "ios:open": "cap open ios",
     "ios:run": "npm run build:ios && cap run ios",
@@ -31,6 +35,7 @@
     "vitest": "^3.2.0"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.2",
     "@capacitor/preferences": "^8.0.1",

@@ -64,3 +64,17 @@ In Xcode, select the **App** scheme and an iPhone simulator, then press Run. Aft
 The Supabase public URL and publishable key are compiled from the local `.env` during `build:ios`, just as they are for the web build. Never put a Supabase service-role key in this file or in the app.
 
 The current iOS build is intentionally local-only: it does not initialize Supabase or display account and social-login controls. Game snapshots are stored through Capacitor Preferences with IndexedDB retained as a recovery copy. If an earlier simulator build has only an IndexedDB save, the first native load migrates that snapshot automatically.
+
+## Run the Android app
+
+The Capacitor Android project lives in `android/` and uses the application ID `com.jonellwood.mergestack`. Install Android Studio and an Android SDK, enable Developer options and USB debugging on the test phone, then run:
+
+```bash
+npm install
+npm run android:sync
+npm run android:open
+```
+
+In Android Studio, select the connected phone and press Run. Accept the USB-debugging authorization prompt on the phone the first time it connects. After changing web code, run `npm run android:sync` before rebuilding. `npm run android:run` can build and install from the command line once the device is authorized.
+
+Like iOS, Android is intentionally local-only and stores game snapshots through Capacitor Preferences. Cloud-account and Google sign-in controls are hidden in native builds.
