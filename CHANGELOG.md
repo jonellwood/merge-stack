@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 — Retro Computing Week
+
+- Added Retro Computing Week, active August 7–14, with a Beige Desktop Computer seasonal generator.
+- Added a seven-level retro hardware chain from Punch Card through Cloud Desktop.
+- Added three limited-time legacy support tickets and the Back to the Cloud event badge.
+- Seasonal generators now stay hidden outside their active event window.
+- Expired retro items are automatically archived for level-scaled credits.
+- Added Server Rack maintenance mode and 4U storage for generators; stored generators remain inactive and do not redeploy themselves.
+- Added an Idle Hints preference without changing production energy costs.
+
 ## 0.5.0 — Server Rack storage
 
 - Added a level-18 Server Rack with 6U of included off-board storage.

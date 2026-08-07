@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { activateProducer, cashoutExpiredHackathon, completeTicket, createGame, discardItem, expandRack, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
+import { activateProducer, cashoutExpiredHackathon, cashoutExpiredRetro, completeTicket, createGame, discardItem, expandRack, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
 import { playerTitle, shopFlavorForLevel } from '$lib/catalogs/titles';
 import { achievementById } from '$lib/catalogs/achievements';
 import type { GameState } from '$lib/domain/types';
@@ -25,7 +25,7 @@ async function commit(result: {state:GameState;ok:boolean;reason?:string;message
 }
 export async function initialize() {
   try {
-    const saved=await loadSave(); const state=saved && validateState(saved).length===0 ? saved : createGame(); const repaired=repairSaveShape(state),energyChanged=normalizeEnergy(state); const progressionChanged=syncProgressionUnlocks(state),ticketsChanged=repairTicketQueue(state); if(repaired||energyChanged||progressionChanged||ticketsChanged)state.updatedAt=Date.now(); game.set(state); await saveGame(state); notice.set(progressionChanged?'New generator deployed!':saved?`Welcome back, ${state.player.title.toLowerCase()}.`:'Workstation online. Tap it to generate code.');
+    const saved=await loadSave(); let state=saved && validateState(saved).length===0 ? saved : createGame(); const repaired=repairSaveShape(state),energyChanged=normalizeEnergy(state);const hackathonArchive=cashoutExpiredHackathon(state);if(hackathonArchive.ok)state=hackathonArchive.state;const retroArchive=cashoutExpiredRetro(state);if(retroArchive.ok)state=retroArchive.state;const progressionChanged=syncProgressionUnlocks(state),ticketsChanged=repairTicketQueue(state); if(repaired||energyChanged||progressionChanged||ticketsChanged||hackathonArchive.ok||retroArchive.ok)state.updatedAt=Date.now(); game.set(state); await saveGame(state); notice.set(retroArchive.ok?retroArchive.message!:hackathonArchive.ok?hackathonArchive.message!:progressionChanged?'New generator deployed!':saved?`Welcome back, ${state.player.title.toLowerCase()}.`:'Workstation online. Tap it to generate code.');
   } catch { const state=createGame(); game.set(state); notice.set('The old save could not be loaded. A safe new board was created.'); }
   ready.set(true);
 }
@@ -42,8 +42,8 @@ export const actions = {
   expandRack:()=>{const state=get(game);return state?commit(expandRack(state)):Promise.resolve(false)},
   unlock:(index:number)=>{const state=get(game);return state?commit(unlockCell(state,index)):Promise.resolve(false)},
   buyEnergy:()=>{const state=get(game);return state?commit(purchaseEnergy(state)):Promise.resolve(false)},
-  setting:async (key:'sound'|'reducedMotion'|'highContrast',value:boolean)=>{const state=get(game);if(!state)return;const next=structuredClone(state);next.settings[key]=value;next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},
-  tick:async()=>{const state=get(game);if(!state)return;const next=structuredClone(state);if(normalizeEnergy(next)){next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)}},
+  setting:async (key:'sound'|'reducedMotion'|'highContrast'|'hints',value:boolean)=>{const state=get(game);if(!state)return;const next=structuredClone(state);next.settings[key]=value;next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},
+  tick:async()=>{const state=get(game);if(!state)return;let next=structuredClone(state),changed=normalizeEnergy(next);const retroArchive=cashoutExpiredRetro(next);if(retroArchive.ok){next=retroArchive.state;changed=true}if(syncProgressionUnlocks(next))changed=true;if(repairTicketQueue(next))changed=true;if(changed){next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)}},
   reset:async()=>{await deleteSave();const state=createGame();game.set(state);await saveGame(state);queueCloudSnapshot(state);notice.set('Fresh environment deployed.')},
   devEnergy:async()=>{const state=get(game);if(!state)return;const next=structuredClone(state);next.player.energy=next.player.maxEnergy;next.player.energyUpdatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next);notice.set('Energy restored.')}
 };

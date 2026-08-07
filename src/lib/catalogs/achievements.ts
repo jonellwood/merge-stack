@@ -18,6 +18,7 @@ export const achievementCatalog: AchievementDefinition[] = [
   {id:'html-operator',name:'Markup Operator',description:'Deploy the HTML Workbench at level 20.',icon:'</>',category:'progression'},
   {id:'html-certified',name:'Standards Compliant',description:'Build Production Markup.',icon:'W3',category:'merge'},
   {id:'hackathon-winner',name:'Hackathon Winner',description:'Redeem a Winning Hack during Hackathon Weekend.',icon:'🏆',category:'event',eventId:'hackathon-2026'}
+  ,{id:'retro-cloud',name:'Back to the Cloud',description:'Merge thirty years of computing into a Cloud Desktop during Retro Computing Week.',icon:'💾',category:'event',eventId:'retro-computing-2026'}
 ];
 
 export const achievementById=new Map(achievementCatalog.map(achievement=>[achievement.id,achievement]));

@@ -45,9 +45,18 @@ export const hackathonItems = chain('hackathon', [
   ['demo_slide_deck','Demo Slide Deck','📊','Twelve slides, zero live code.'],
   ['winning_hack','Winning Hack','🏆','The prototype that somehow worked at 4 a.m.']
 ]);
+export const retroItems = chain('retro', [
+  ['punch_card','Punch Card','▥','One program, provided you punch every hole correctly.'],
+  ['mainframe_terminal','Mainframe Terminal','⌨','Green text, serious furniture, absolutely no undo button.'],
+  ['floppy_disk','Floppy Disk','💾','The only working backup, labeled FINAL-final-2.'],
+  ['dos_pc','DOS PC','C:\\>','Six hundred forty kilobytes ought to be enough for this ticket.'],
+  ['windows_95_machine','Windows 95 Machine','▣95','The Start button is new and the shutdown screen is permanent.'],
+  ['modern_workstation','Modern Workstation','🖥','Thirty years of progress and still one beige keyboard.'],
+  ['cloud_desktop','Cloud Desktop','☁PC','The beige box has transcended into a monthly invoice.']
+]);
 export const producer: ItemDefinition = { id:'workstation', name:'Junior Developer Workstation', description:'Produces code and occasional consequences.', kind:'producer', icon:'⌨', mergeable:false, tags:['producer'] };
 export const infrastructureProducer: ItemDefinition = { id:'infrastructure_workbench', name:'Infrastructure Workbench', description:'Produces server hardware and operational anxiety. Unlocks at player level 7.', kind:'producer', icon:'🛠', mergeable:false, tags:['producer','servers'] };
-export const eventProducer: ItemDefinition = { id:'event_pipeline', name:'Event Deployment Pipeline', description:'A variable seasonal release train. Current deployment: Hackathon Weekend, through Sunday.', kind:'producer', icon:'⚑', mergeable:false, tags:['producer','event','hackathon'] };
+export const eventProducer: ItemDefinition = { id:'event_pipeline', name:'Beige Desktop Computer', description:'A suspiciously yellowed gateway to Retro Computing Week. Available through Friday, August 14.', kind:'producer', icon:'🖥️', mergeable:false, tags:['producer','event','retro'] };
 export const htmlProducer: ItemDefinition = { id:'html_workbench', name:'HTML Workbench', description:'Produces structured markup and strongly held opinions about semantics. Unlocks at player level 20.', kind:'producer', icon:'</>', mergeable:false, tags:['producer','html'] };
-export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...htmlItems, ...hackathonItems, producer, infrastructureProducer, eventProducer, htmlProducer];
+export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...htmlItems, ...hackathonItems, ...retroItems, producer, infrastructureProducer, eventProducer, htmlProducer];
 export const itemById = new Map(itemCatalog.map((item) => [item.id, item]));

@@ -9,13 +9,13 @@ export interface BoardItem { instanceId: string; definitionId: string; cellIndex
 export interface BoardCell { index: number; locked: boolean; unlockCost?: number; }
 export interface PlayerState { id: 'local-player'; credits: number; xp: number; level: number; title: string; energy: number; maxEnergy: number; energyUpdatedAt: number; }
 export interface Requirement { itemId: string; quantity: number; }
-export interface TicketTemplate { id: string; requester: string; title: string; description: string; requirements: Requirement[]; minPlayerLevel?: number; }
+export interface TicketTemplate { id: string; requester: string; title: string; description: string; requirements: Requirement[]; minPlayerLevel?: number; activeFrom?: number; activeUntil?: number; }
 export interface Ticket { id: string; requesterId: string; requester: string; title: string; description: string; requirements: Requirement[]; rewards: { credits: number; xp: number; energy: number }; status: 'active' | 'completed'; createdAt: number; }
 export interface EnergyShopState { windowStartedAt: number | null; purchases: number; }
 export interface TidyServiceState { windowStartedAt: number | null; uses: number; }
-export interface RackItem { instanceId: string; definitionId: string; createdAt: number; storedAt: number; originProducerId?: string; }
+export interface RackItem { instanceId: string; definitionId: string; createdAt: number; storedAt: number; originProducerId?: string; state?: BoardItemState; }
 export interface ServerRackState { capacity: number; expansions: number; items: RackItem[]; }
-export interface GameSettings { sound: boolean; reducedMotion: boolean; highContrast: boolean; }
+export interface GameSettings { sound: boolean; reducedMotion: boolean; highContrast: boolean; hints: boolean; }
 export interface AchievementRecord { earnedAt: number; eventId?: string; }
 export interface GameStatistics { mergesCompleted: number; ticketsCompleted: number; eventFinalsRedeemed: number; }
 export interface GameState { schemaVersion: number; player: PlayerState; cells: BoardCell[]; items: BoardItem[]; tickets: Ticket[]; settings: GameSettings; energyShop: EnergyShopState; tidyService: TidyServiceState; serverRack: ServerRackState; achievements: Record<string,AchievementRecord>; statistics: GameStatistics; ticketSequence: number; updatedAt: number; }

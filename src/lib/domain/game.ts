@@ -1,5 +1,5 @@
 import { BALANCE } from '$lib/catalogs/balance';
-import { HACKATHON_CASHOUT_CREDITS, HACKATHON_EVENT, HACKATHON_REDEMPTION } from '$lib/catalogs/events';
+import { HACKATHON_CASHOUT_CREDITS, HACKATHON_EVENT, HACKATHON_REDEMPTION, RETRO_CASHOUT_CREDITS, RETRO_COMPUTING_EVENT } from '$lib/catalogs/events';
 import { itemById, itemCatalog } from '$lib/catalogs/items';
 import { producerByItemId, producerCatalog } from '$lib/catalogs/producers';
 import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
@@ -12,7 +12,7 @@ const clone = (state: GameState): GameState => structuredClone(state);
 export function evaluateAchievements(state:GameState,now=Date.now()):string[]{
   const earned:string[]=[];
   const award=(id:string,eventId?:string)=>{if(state.achievements[id])return;state.achievements[id]={earnedAt:now,eventId};earned.push(id)};
-  const definitions=new Set(state.items.map(item=>item.definitionId));
+  const definitions=new Set([...state.items,...state.serverRack.items].map(item=>item.definitionId));
   if(state.statistics.mergesCompleted>=1)award('first-merge');
   if(state.statistics.ticketsCompleted>=1)award('first-ticket');
   if(definitions.has('application'))award('application-shipped');
@@ -22,6 +22,7 @@ export function evaluateAchievements(state:GameState,now=Date.now()):string[]{
   if(definitions.has('html_workbench'))award('html-operator');
   if(definitions.has('production_markup'))award('html-certified');
   if(state.statistics.eventFinalsRedeemed>=1)award('hackathon-winner',HACKATHON_EVENT.id);
+  if(definitions.has('cloud_desktop'))award('retro-cloud',RETRO_COMPUTING_EVENT.id);
   return earned;
 }
 
@@ -48,12 +49,12 @@ export function weightedDrop<T extends { weight: number }>(choices: readonly T[]
   return valid.find((choice) => (point -= choice.weight) < 0) ?? valid.at(-1);
 }
 
-function availableTemplates(level: number) {
+function availableTemplates(level: number, now = Date.now()) {
   const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 10);
-  return ticketTemplates.filter((template) => (template.minPlayerLevel??1)<=level && template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
+  return ticketTemplates.filter((template) => (template.minPlayerLevel??1)<=level && (template.activeFrom===undefined||now>=template.activeFrom) && (template.activeUntil===undefined||now<template.activeUntil) && template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
 }
 export function generateTicket(state: GameState, now = Date.now()): Ticket {
-  const available = availableTemplates(state.player.level);
+  const available = availableTemplates(state.player.level,now);
   const activeTitles = new Set(state.tickets.map((ticket) => ticket.title));
   const uniqueTemplates = available.filter((template) => !activeTitles.has(template.title));
   const templates = uniqueTemplates.length > 0 ? uniqueTemplates : available;
@@ -66,8 +67,12 @@ export function generateTicket(state: GameState, now = Date.now()): Ticket {
 
 export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
   const originalTitles = state.tickets.map((ticket) => ticket.title);
+  const currentlyAvailable=new Set(availableTemplates(state.player.level,now).map(template=>template.id));
+  const timedTemplateTitles=new Map(ticketTemplates.filter(template=>template.activeFrom!==undefined||template.activeUntil!==undefined).map(template=>[template.title,template.id]));
   const unique: Ticket[] = [];
   for (const ticket of state.tickets) {
+    const timedId=timedTemplateTitles.get(ticket.title);
+    if(timedId&&!currentlyAvailable.has(timedId))continue;
     if (!unique.some((candidate) => candidate.title === ticket.title)) unique.push(ticket);
   }
   state.tickets = unique;
@@ -76,19 +81,22 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 }
 
 export function createGame(now = Date.now()): GameState {
-  const state: GameState = { schemaVersion:4, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+  const state: GameState = { schemaVersion:5, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
-    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false,hints:true}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
   return state;
 }
 
 export function syncProgressionUnlocks(state:GameState,now=Date.now()):boolean {
   let changed=false;
-  const gatedProducerIds=new Set(producerCatalog.filter(producer=>state.player.level<producer.unlockLevel).map(producer=>producer.itemId));
+  const inactive=(producer:typeof producerCatalog[number])=>state.player.level<producer.unlockLevel||(producer.activeFrom!==undefined&&now<producer.activeFrom)||(producer.activeUntil!==undefined&&now>=producer.activeUntil);
+  const gatedProducerIds=new Set(producerCatalog.filter(inactive).map(producer=>producer.itemId));
   if(state.items.some(item=>gatedProducerIds.has(item.definitionId))){state.items=state.items.filter(item=>!gatedProducerIds.has(item.definitionId));changed=true}
+  if(state.serverRack.items.some(item=>gatedProducerIds.has(item.definitionId))){state.serverRack.items=state.serverRack.items.filter(item=>!gatedProducerIds.has(item.definitionId));changed=true}
+  const deployedOrStored=new Set([...state.items,...state.serverRack.items].map(item=>item.definitionId));
   for(const producer of producerCatalog){
-    if(state.player.level<producer.unlockLevel||state.items.some(item=>item.definitionId===producer.itemId))continue;
+    if(inactive(producer)||deployedOrStored.has(producer.itemId))continue;
     const occupied=new Set(state.items.map(item=>item.cellIndex));
     let cell=state.cells.find(candidate=>!candidate.locked&&!occupied.has(candidate.index));
     if(!cell)cell=state.cells.find(candidate=>candidate.locked&&!occupied.has(candidate.index));
@@ -225,6 +233,14 @@ export function cashoutExpiredHackathon(original:GameState,now=Date.now()){
   const state=clone(original);state.items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='hackathon');state.serverRack.items=state.serverRack.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='hackathon');state.player.credits+=quote.credits;state.updatedAt=now;
   return{state,ok:true,action:'event-cashout',message:`Hackathon payout: ${quote.items} items · +${quote.credits} credits`};
 }
+export function cashoutExpiredRetro(original:GameState,now=Date.now()){
+  if(now<RETRO_COMPUTING_EVENT.endsAt)return{state:original,ok:false,reason:'Retro Computing Week is still active'};
+  const items=[...original.items,...original.serverRack.items].filter(item=>itemById.get(item.definitionId)?.chainId==='retro');
+  if(!items.length)return{state:original,ok:false,reason:'No retro items to archive'};
+  const credits=items.reduce((total,item)=>total+(RETRO_CASHOUT_CREDITS[itemById.get(item.definitionId)?.level??0]??0),0),state=clone(original);
+  state.items=state.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='retro');state.serverRack.items=state.serverRack.items.filter(item=>itemById.get(item.definitionId)?.chainId!=='retro');state.player.credits+=credits;state.updatedAt=now;
+  return{state,ok:true,action:'event-cashout',message:`Retro archive: ${items.length} items · +${credits} credits`};
+}
 export function discardQuote(state:GameState,itemId:string){
   const item=state.items.find(candidate=>candidate.instanceId===itemId),definition=item&&itemById.get(item.definitionId);
   if(!item||!definition||definition.kind==='producer')return undefined;
@@ -264,7 +280,8 @@ export function tidyBoard(original:GameState,now=Date.now()){
   return{state,ok:true,action:'tidy',message:`Board tidied for ${quote.cost} credits`};
 }
 export function rackItemSize(definitionId:string):number{
-  const level=itemById.get(definitionId)?.level??1;
+  const definition=itemById.get(definitionId);if(definition?.kind==='producer')return 4;
+  const level=definition?.level??1;
   return level>=7?3:level>=4?2:1;
 }
 export function rackUsed(state:GameState):number{return state.serverRack.items.reduce((total,item)=>total+rackItemSize(item.definitionId),0)}
@@ -275,10 +292,10 @@ export function rackExpansionQuote(state:GameState){
 export function storeInRack(original:GameState,itemId:string,now=Date.now()){
   if(original.player.level<BALANCE.serverRackUnlockLevel)return{state:original,ok:false,reason:`Server Rack unlocks at level ${BALANCE.serverRackUnlockLevel}`};
   const item=original.items.find(candidate=>candidate.instanceId===itemId),definition=item&&itemById.get(item.definitionId);
-  if(!item||!definition||definition.kind!=='mergeable')return{state:original,ok:false,reason:'Only mergeable items can be stored'};
+  if(!item||!definition)return{state:original,ok:false,reason:'Item not found'};
   const size=rackItemSize(item.definitionId),free=original.serverRack.capacity-rackUsed(original);
   if(size>free)return{state:original,ok:false,reason:`Need ${size}U of rack space`};
-  const state=clone(original),stored:RackItem={instanceId:item.instanceId,definitionId:item.definitionId,createdAt:item.createdAt,storedAt:now,originProducerId:item.originProducerId};
+  const state=clone(original),stored:RackItem={instanceId:item.instanceId,definitionId:item.definitionId,createdAt:item.createdAt,storedAt:now,originProducerId:item.originProducerId,state:item.state};
   state.items=state.items.filter(candidate=>candidate.instanceId!==itemId);state.serverRack.items.push(stored);evaluateAchievements(state,now);state.updatedAt=now;
   return{state,ok:true,action:'rack-store',message:`${definition.name} mounted · ${size}U`};
 }
@@ -286,7 +303,7 @@ export function retrieveFromRack(original:GameState,itemId:string,now=Date.now()
   const stored=original.serverRack.items.find(item=>item.instanceId===itemId);if(!stored)return{state:original,ok:false,reason:'Rack item not found'};
   const occupied=new Set(original.items.map(item=>item.cellIndex)),cell=original.cells.find(candidate=>!candidate.locked&&!occupied.has(candidate.index));
   if(!cell)return{state:original,ok:false,reason:'No free board cell available'};
-  const state=clone(original);state.serverRack.items=state.serverRack.items.filter(item=>item.instanceId!==itemId);state.items.push({instanceId:stored.instanceId,definitionId:stored.definitionId,cellIndex:cell.index,createdAt:stored.createdAt,originProducerId:stored.originProducerId});state.updatedAt=now;
+  const state=clone(original);state.serverRack.items=state.serverRack.items.filter(item=>item.instanceId!==itemId);state.items.push({instanceId:stored.instanceId,definitionId:stored.definitionId,cellIndex:cell.index,createdAt:stored.createdAt,originProducerId:stored.originProducerId,state:stored.state});state.updatedAt=now;
   return{state,ok:true,action:'rack-retrieve',message:`${itemById.get(stored.definitionId)?.name} returned to board`};
 }
 export function expandRack(original:GameState,now=Date.now()){
@@ -300,10 +317,12 @@ export function repairSaveShape(state:GameState):boolean {
   if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
   if(!state.tidyService){state.tidyService={windowStartedAt:null,uses:0};changed=true}
   if(!state.serverRack){state.serverRack={capacity:BALANCE.serverRackStartingU,expansions:0,items:[]};changed=true}
+  if(!state.settings){state.settings={sound:true,reducedMotion:false,highContrast:false,hints:true};changed=true}
+  if(state.settings.hints===undefined){state.settings.hints=true;changed=true}
   if(!state.achievements){state.achievements={};changed=true}
   if(!state.statistics){state.statistics={mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0};changed=true}
   for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
-  if(state.schemaVersion<4){state.schemaVersion=4;changed=true}
+  if(state.schemaVersion<5){state.schemaVersion=5;changed=true}
   if(!state.player.title){state.player.title=playerTitle(state.player.level);changed=true}
   if(evaluateAchievements(state).length)changed=true;
   return changed;

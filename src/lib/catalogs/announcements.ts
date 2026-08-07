@@ -45,6 +45,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '🗄️',
     tag: 'BOARD MANAGEMENT',
   },
+  {
+    id: 'retro-computing-week',
+    version: '0.6.0',
+    date: '2026-08-07',
+    headline: 'Booting Retro Computing Week',
+    body: 'The Beige Desktop Computer is online through Friday, August 14, with seven generations of delightfully obsolete hardware and three limited-time support tickets. Server Rack maintenance mode can now mount generators in 4U bays, inactive seasonal generators stay hidden, and idle hints can be disabled in Settings.',
+    icon: '💾',
+    tag: 'LIMITED EVENT',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

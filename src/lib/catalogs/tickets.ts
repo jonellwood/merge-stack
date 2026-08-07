@@ -1,5 +1,6 @@
 import { itemById } from './items';
 import type { TicketTemplate } from '$lib/domain/types';
+import { RETRO_COMPUTING_EVENT } from './events';
 
 export const ticketTemplates: TicketTemplate[] = [
   { id:'password-alignment', requester:'Help Desk', title:'Password Field Alignment', description:'The pixels have unionized.', requirements:[{itemId:'string',quantity:1}] },
@@ -35,6 +36,9 @@ export const ticketTemplates: TicketTemplate[] = [
   ,{ id:'public-access-review', requester:'Compliance', title:'Public Access Review', description:'The site must work for users, keyboards, and procurement.', minPlayerLevel:20, requirements:[{itemId:'accessible_page',quantity:1},{itemId:'warning',quantity:1}] }
   ,{ id:'document-reorganization', requester:'Content Strategy', title:'Document Reorganization', description:'Everything is above the fold if the document is long enough.', minPlayerLevel:20, requirements:[{itemId:'document_structure',quantity:1}] }
   ,{ id:'production-markup-release', requester:'Release Engineering', title:'Production Markup Release', description:'Ship the final HTML before someone requests another wrapper.', minPlayerLevel:20, requirements:[{itemId:'production_markup',quantity:1}] }
+  ,{ id:'netscape-required', requester:'Legacy Applications', title:'Netscape Required', description:'The application requires Netscape Navigator.', minPlayerLevel:14, activeFrom:RETRO_COMPUTING_EVENT.startsAt, activeUntil:RETRO_COMPUTING_EVENT.endsAt, requirements:[{itemId:'mainframe_terminal',quantity:1},{itemId:'punch_card',quantity:1}] }
+  ,{ id:'only-working-backup', requester:'Business Continuity', title:'The Only Working Backup', description:'A floppy disk contains the only working backup.', minPlayerLevel:14, activeFrom:RETRO_COMPUTING_EVENT.startsAt, activeUntil:RETRO_COMPUTING_EVENT.endsAt, requirements:[{itemId:'floppy_disk',quantity:1}] }
+  ,{ id:'stable-by-obscurity', requester:'Legacy Systems', title:'Stable by Obscurity', description:'The system is stable because nobody knows how to modify it.', minPlayerLevel:14, activeFrom:RETRO_COMPUTING_EVENT.startsAt, activeUntil:RETRO_COMPUTING_EVENT.endsAt, requirements:[{itemId:'dos_pc',quantity:1},{itemId:'punch_card',quantity:1}] }
 ];
 
 export function ticketRewards(template: Pick<TicketTemplate,'requirements'>) {

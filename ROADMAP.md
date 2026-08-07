@@ -264,6 +264,8 @@ Additional generators should increase pressure gradually.
 
 **Implemented in v0.5.0.** The generic game “backpack” is a visual server rack that stores items off-board and unlocks at level 18.
 
+**Generator bays implemented in v0.6.0.** Opening the rack enters maintenance mode, and deployed generators can be mounted as inactive 4U equipment. Stored generators continue to count as unlocked and are not automatically recreated on the board.
+
 The rack is measured in rack units (`U`) rather than slots:
 
 - Levels 1–3 occupy `1U`.

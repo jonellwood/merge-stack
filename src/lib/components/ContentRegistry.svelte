@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { GameState } from '$lib/domain/types';
-  import { bugItems, hackathonItems, htmlItems, itemById, itemCatalog, javascriptItems, serverItems } from '$lib/catalogs/items';
+  import { bugItems, hackathonItems, htmlItems, itemById, itemCatalog, javascriptItems, retroItems, serverItems } from '$lib/catalogs/items';
   import { ticketRewards, ticketTemplates } from '$lib/catalogs/tickets';
   let { state: gameState, onClose }: {state:GameState;onClose:()=>void}=$props();
   let tab=$state<'paths'|'items'|'queue'|'templates'>('paths');
-  const chains=[{name:'JavaScript',items:javascriptItems},{name:'Production Bugs',items:bugItems},{name:'Server Infrastructure',items:serverItems},{name:'HTML Markup',items:htmlItems},{name:'Hackathon Weekend',items:hackathonItems}];
+  const chains=[{name:'JavaScript',items:javascriptItems},{name:'Production Bugs',items:bugItems},{name:'Server Infrastructure',items:serverItems},{name:'HTML Markup',items:htmlItems},{name:'Hackathon Weekend',items:hackathonItems},{name:'Retro Computing Week',items:retroItems}];
 </script>
 <div class="registry-backdrop" role="presentation" onclick={(event)=>event.target===event.currentTarget&&onClose()}>
   <div class="registry" role="dialog" aria-modal="true" aria-labelledby="registry-title">
