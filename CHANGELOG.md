@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — Save integrity
+
+- Added foreground, reconnect, and live Supabase reconciliation so returning web devices discover newer cloud revisions before gameplay resumes.
+- Added explicit dirty-state tracking and mutation gating when cloud timelines conflict.
+- Added eight rotating local recovery snapshots and automatic recovery from the newest valid snapshot.
+- Requested persistent browser storage where supported and stopped treating storage-read failures as an empty new game.
+- Added downloadable/importable JSON save backups and a protected recovery interface.
+- Added same-origin multi-tab save notifications to prevent stale tabs from remaining silently behind.
+- Added deterministic reconciliation tests and a migration that enables Realtime updates for `game_saves`.
+
 ## 0.6.0 — Retro Computing Week
 
 - Added Retro Computing Week, active August 7–14, with a Beige Desktop Computer seasonal generator.
