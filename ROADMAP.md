@@ -159,6 +159,14 @@ Design notes:
 - Higher-level CSS tickets should pay enough to justify the additional board pressure.
 - The final name may change if “Design System” is reserved for a cross-chain recipe later.
 
+### Portrait mobile QoL to ship with the CSS release
+
+- Keep the player's current level visible in the iPhone portrait HUD. Compress or rearrange secondary HUD content instead of hiding the level behind a narrow-screen breakpoint.
+- Treat portrait as the complete playable layout; landscape may remain supported, but must not be required to reach information or controls.
+- Make the Content Registry/progression browser header and close control sticky while its body scrolls.
+- Position modal controls inside the iOS safe area (`env(safe-area-inset-top/right)`) so the close button remains reachable in an installed PWA.
+- Test both changes at the iPhone 15 Pro viewport and with enlarged text before release.
+
 ## Branching generator experiment
 
 The current merge model is linear: two identical items become the next item in one chain. A later generator should produce two independent families with different drop rates.
