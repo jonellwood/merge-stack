@@ -54,6 +54,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '💾',
     tag: 'LIMITED EVENT',
   },
+  {
+    id: 'save-integrity-sync',
+    version: '0.7.0',
+    date: '2026-08-14',
+    headline: 'Your Progress, Reinforced',
+    body: 'Merge Stack now checks for newer cloud progress whenever you return, responds to saves from another active device, and pauses safely when two timelines conflict. Local play also gains persistent-storage protection, rotating recovery snapshots, multi-tab awareness, and portable save backups.',
+    icon: '🛡️',
+    tag: 'SAVE INTEGRITY',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

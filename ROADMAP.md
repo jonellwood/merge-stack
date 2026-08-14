@@ -352,11 +352,19 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 ## Suggested implementation sequence
 
+### Reliability foundation — Implemented in v0.7.0
+
+- Reconcile cloud revisions on initial load, foreground resume, reconnect, and live remote updates.
+- Prevent gameplay mutations while cloud timelines are being checked or require a choice.
+- Keep rotating local recovery snapshots and request persistent browser storage.
+- Provide save export, protected startup recovery, and multi-tab awareness.
+- Treat save integrity as a release gate for every future content phase.
+
 ### Phase 1 — Content expansion
 
-- Build the HTML Workbench and chain during the current event, then release it after the event wrap-up.
-- Add HTML ticket templates and registry content.
-- Add the badge data model and a small profile Badge Cabinet before the next seasonal event.
+- ~~Build the HTML Workbench and chain during the current event, then release it after the event wrap-up.~~ Implemented in v0.4.0.
+- ~~Add HTML ticket templates and registry content.~~ Implemented in v0.4.0.
+- ~~Add the badge data model and a small profile Badge Cabinet before the next seasonal event.~~ Implemented in v0.4.0.
 - Playtest progression timing and board occupancy.
 - Add the CSS Selector Lab only after HTML balance is stable.
 

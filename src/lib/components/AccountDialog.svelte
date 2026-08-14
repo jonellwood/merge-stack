@@ -1,19 +1,17 @@
 <script lang="ts">
   import { authMessage, cloudAvailable, cloudUser, sendMagicLink, signInWithGoogle, signOut, verifyEmailCode } from '$lib/cloud/account-store';
-  import { chooseCloudSave, chooseLocalSave, cloudSync, inspectCloudState } from '$lib/cloud/sync-manager';
+  import { chooseCloudSave, chooseLocalSave, cloudSync } from '$lib/cloud/sync-manager';
   import { game } from '$lib/state/game-store';
-  import { saveGame } from '$lib/persistence/db';
+  import { checkpointSave, saveGame } from '$lib/persistence/db';
   import { isNativeApp } from '$lib/platform';
   let {onClose}:{onClose:()=>void}=$props();
   let email=$state(''),code=$state(''),sending=$state(false),emailSent=$state(false);
-  let inspectedUser=$state<string|null>(null);
   const native=isNativeApp();
   async function submit(){if(!email||sending)return;sending=true;try{emailSent=await sendMagicLink(email)}finally{sending=false}}
   let validCode=$derived(/^\d{6,10}$/.test(code));
   async function verifyCode(){if(!validCode||sending)return;sending=true;try{await verifyEmailCode(email,code)}finally{sending=false}}
   async function useLocal(){if(!$cloudUser||!$game)return;sending=true;try{await chooseLocalSave($cloudUser.id,$game,$cloudSync.cloud)}finally{sending=false}}
-  async function useCloud(){if(!$cloudUser||!$cloudSync.cloud)return;sending=true;try{const state=await chooseCloudSave($cloudUser.id,$cloudSync.cloud);game.set(state);await saveGame(state)}finally{sending=false}}
-  $effect(()=>{if($cloudUser&&$game&&inspectedUser!==$cloudUser.id){inspectedUser=$cloudUser.id;inspectCloudState($cloudUser.id,$game).then(async state=>{if(state){game.set(state);await saveGame(state)}})}});
+  async function useCloud(){if(!$cloudUser||!$cloudSync.cloud||!$game)return;sending=true;try{await checkpointSave($game,'before-cloud-choice');const state=await chooseCloudSave($cloudUser.id,$cloudSync.cloud);game.set(state);await saveGame(state,'cloud-choice')}finally{sending=false}}
 </script>
 <div class="account-backdrop" role="presentation" onclick={(event)=>event.target===event.currentTarget&&onClose()}>
   <div class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title">

@@ -33,6 +33,8 @@ The game remains local-first and deliberately excludes monetization, multiplayer
 
 The migration enables Row Level Security and creates revision-controlled saves plus a future command outbox.
 
+Apply all files in `supabase/migrations/` to the linked Supabase project. The v0.7.0 migration adds `game_saves` to Supabase Realtime so an active browser can learn about saves from another device; foreground reconciliation remains the authoritative fallback.
+
 On first connection, the account dialog asks whether local or cloud progress should win. Linked devices then save successful changes automatically using optimistic revisions; stale or independently changed saves stop for an explicit reconciliation choice.
 
 For installed PWA sign-in, paste `supabase/email-templates/magic-link.html` into **Supabase → Authentication → Email Templates → Magic Link**. It includes both `{{ .Token }}` for entering the verification code directly inside the PWA and `{{ .ConfirmationURL }}` as a browser fallback. The client accepts Supabase OTP lengths from 6–10 digits.
