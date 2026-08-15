@@ -7,15 +7,16 @@
   let {onClose}:{onClose:()=>void}=$props();
   let email=$state(''),code=$state(''),sending=$state(false),emailSent=$state(false);
   const native=isNativeApp();
+  const decisionRequired=$derived($cloudSync.phase==='choice'||$cloudSync.phase==='conflict');
   async function submit(){if(!email||sending)return;sending=true;try{emailSent=await sendMagicLink(email)}finally{sending=false}}
   let validCode=$derived(/^\d{6,10}$/.test(code));
   async function verifyCode(){if(!validCode||sending)return;sending=true;try{await verifyEmailCode(email,code)}finally{sending=false}}
   async function useLocal(){if(!$cloudUser||!$game)return;sending=true;try{await chooseLocalSave($cloudUser.id,$game,$cloudSync.cloud)}finally{sending=false}}
   async function useCloud(){if(!$cloudUser||!$cloudSync.cloud||!$game)return;sending=true;try{await checkpointSave($game,'before-cloud-choice');const state=await chooseCloudSave($cloudUser.id,$cloudSync.cloud);game.set(state);await saveGame(state,'cloud-choice')}finally{sending=false}}
 </script>
-<div class="account-backdrop" role="presentation" onclick={(event)=>event.target===event.currentTarget&&onClose()}>
+<div class="account-backdrop" role="presentation" onclick={(event)=>event.target===event.currentTarget&&!decisionRequired&&onClose()}>
   <div class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-title">
-    <button class="account-close" onclick={onClose} aria-label="Close account dialog">×</button><div class="account-icon">◎</div><small>MERGE STACK CLOUD</small>
+    {#if !decisionRequired}<button class="account-close" onclick={onClose} aria-label="Close account dialog">×</button>{/if}<div class="account-icon">◎</div><small>MERGE STACK CLOUD</small>
     {#if $cloudUser}
       <h2 id="account-title">Cloud progress</h2><p>Signed in as <b>{$cloudUser.email}</b></p>
       {#if $cloudSync.phase==='checking'}<div class="cloud-checking">Checking this device against the cloud…</div>

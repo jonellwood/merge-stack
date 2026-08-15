@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.1 — Cloud reconciliation hotfix
+
+- Treat byte-for-byte equivalent local and cloud game states as synchronized, even when stale link metadata says both changed.
+- Use the cloud save's existing last-writer device ID to safely pull or push the newer state from the same device.
+- Wait for pending automatic uploads before running a foreground reconciliation check.
+- Automatically open the cloud decision dialog when a genuine conflict pauses gameplay, and keep it visible until the player decides.
+
 ## 0.7.0 — Save integrity
 
 - Added foreground, reconnect, and live Supabase reconciliation so returning web devices discover newer cloud revisions before gameplay resumes.
