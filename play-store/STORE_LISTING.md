@@ -53,19 +53,18 @@ From junior developer to legacy-platform hero, every merge brings the system a l
 | --- | --- | --- |
 | App icon | `assets/app-icon-512.png` | Ready — 512×512 PNG |
 | Feature graphic | `assets/feature-graphic.png` | Ready — 1024×500 PNG, no alpha |
-| Phone screenshots | `assets/phone-01.png` onward | Capture required |
+| Phone screenshots | `assets/phone-01-board.jpg` onward | Ready — four 1080×2160 JPEGs |
 
 ## Phone screenshot plan
 
-Use at least four authentic portrait screenshots, cropped/exported at **1080×1920**. Keep the first three focused on gameplay.
+Upload the four authentic portrait screenshots at **1080×2160** in the following order. The first three focus on gameplay and progression.
 
 1. **Core merge board** — A populated board with several recognizable chains and at least one highlighted merge. Show energy, credits, and as much of the level HUD as the current phone layout permits. Alt text: `A populated programming-themed board with matching code items ready to merge.`
-2. **Support Queue** — Open the drawer to a ticket that has one or more completed requirements and a visible Resolve button. Alt text: `The Support Queue showing item requirements and rewards for resolving tickets.`
-3. **Server Rack** — Show items mounted in the rack with capacity usage visible. Alt text: `The Server Rack storing valuable items away from the main merge board.`
-4. **Content Registry** — Show multiple permanent merge progressions. Alt text: `The Content Registry displaying programming item chains and their upgrade paths.`
-5. **Achievements** (optional) — Show the Badge Cabinet with several earned badges. Alt text: `The Badge Cabinet showing progression and event achievements.`
+2. **Support Queue** — Shows active tickets, a completed requirement, and available rewards. Alt text: `The Support Queue showing item requirements and rewards for resolving tickets.`
+3. **Content Registry** — Multiple permanent merge progressions. Alt text: `The Content Registry displaying programming item chains and their upgrade paths.`
+4. **Achievements** — The Badge Cabinet with earned and upcoming credentials. Alt text: `The Badge Cabinet showing earned achievements and future progression goals.`
 
-Avoid event-specific screenshots in the evergreen listing unless they are replaced immediately after the event. Before capturing, clear notifications and use full battery, Wi-Fi, and cellular status indicators. Do not add a phone frame or fingers.
+Avoid event-specific screenshots in the evergreen listing unless they are replaced immediately after the event. These captures omit the Android status and navigation bars and contain no device frame or fingers.
 
 ## Upload order
 
