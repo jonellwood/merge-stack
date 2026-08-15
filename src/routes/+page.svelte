@@ -4,7 +4,7 @@
   import { ANNOUNCEMENTS, type Announcement } from '$lib/catalogs/announcements';
   import { getUnseenAnnouncements } from '$lib/persistence/announcements';
   import { cloudUser, initializeCloudAuth } from '$lib/cloud/account-store';
-  import { inspectCloudState, resetCloudSync, watchCloudSave } from '$lib/cloud/sync-manager';
+  import { cloudSync, inspectCloudState, resetCloudSync, watchCloudSave } from '$lib/cloud/sync-manager';
   import { checkpointSave, loadSave, saveGame, watchLocalSaves } from '$lib/persistence/db';
   import { isNativeApp } from '$lib/platform';
   import { findMergeHint, ticketReady } from '$lib/domain/game';
@@ -18,6 +18,7 @@
   const native=isNativeApp();
   const confetti=Array.from({length:30},(_,index)=>({left:4+(index*37)%92,drift:(index*53)%180-90,delay:(index%8)*.045,duration:1.65+(index%5)*.16,color:['#45e5d0','#5b8cff','#ffc760','#ff6f91','#f7f9ff'][index%5],spin:index%2?'540deg':'-540deg'}));
   $effect(()=>{if($ready&&!splashChecked){splashChecked=true;const unseen=getUnseenAnnouncements();splashAnnouncement=unseen.at(-1)??null}});
+  $effect(()=>{if(!native&&$cloudUser&&($cloudSync.phase==='choice'||$cloudSync.phase==='conflict'))accountOpen=true});
   onMount(()=>{
     void initialize();let lastLevel:number|null=null;let lastTitle:string|null=null;let celebrationTimer:ReturnType<typeof setTimeout>;let idleTimer:ReturnType<typeof setTimeout>;let disposeCloud:(()=>void)|undefined,disposeLive=()=>{};let currentUserId:string|undefined,latestState:import('$lib/domain/types').GameState|null=null,coordinatedUser:string|undefined,reconcilePromise:Promise<void>|undefined;
     async function reconcile(announce=false){if(native||!currentUserId||!latestState)return;if(reconcilePromise)return reconcilePromise;reconcilePromise=(async()=>{const cloudState=await inspectCloudState(currentUserId!,latestState!);if(cloudState){await checkpointSave(latestState!,'before-cloud-pull');game.set(cloudState);await saveGame(cloudState,'cloud-pull');if(announce)notice.set('Progress updated from another device.')}})().finally(()=>reconcilePromise=undefined);return reconcilePromise}
