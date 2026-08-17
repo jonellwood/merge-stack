@@ -37,6 +37,17 @@ export const htmlItems = chain('html', [
   ['document_structure','Document Structure','⌘','The whole outline, behaving responsibly.'],
   ['production_markup','Production Markup','</>','Valid, accessible, and somehow approved.']
 ]);
+export const cssItems = chain('css', [
+  ['type_selector','Type Selector','p','Styles every element brave enough to share a tag.'],
+  ['class_selector','Class Selector','.card','Reusable presentation with a leading period.'],
+  ['attribute_selector','Attribute Selector','[role]','Finds elements by the labels they brought with them.'],
+  ['combinator','Combinator','>','Describes a relationship the DOM insists is simple.'],
+  ['pseudo_class','Pseudo-class',':hover','A state that exists until someone uses a touchscreen.'],
+  ['selector_list','Selector List',',','Several selectors sharing one declaration and one fate.'],
+  ['specificity_rule','Specificity Rule','0-1-0','A scoring system nobody meant to memorize.'],
+  ['cascade_layer','Cascade Layer','@layer','An official place to put the styles that must win later.'],
+  ['design_system','Design System','▦ CSS','Every component is consistent, except the legacy ones.']
+]);
 export const hackathonItems = chain('hackathon', [
   ['energy_drink','Energy Drink','⚡','The official fuel of sprint planning.'],
   ['sticky_note','Sticky Note','📝','A requirement that will definitely survive the weekend.'],
@@ -58,5 +69,6 @@ export const producer: ItemDefinition = { id:'workstation', name:'Junior Develop
 export const infrastructureProducer: ItemDefinition = { id:'infrastructure_workbench', name:'Infrastructure Workbench', description:'Produces server hardware and operational anxiety. Unlocks at player level 7.', kind:'producer', icon:'🛠', mergeable:false, tags:['producer','servers'] };
 export const eventProducer: ItemDefinition = { id:'event_pipeline', name:'Beige Desktop Computer', description:'A suspiciously yellowed gateway to Retro Computing Week. Available through Friday, August 14.', kind:'producer', icon:'🖥️', mergeable:false, tags:['producer','event','retro'] };
 export const htmlProducer: ItemDefinition = { id:'html_workbench', name:'HTML Workbench', description:'Produces structured markup and strongly held opinions about semantics. Unlocks at player level 20.', kind:'producer', icon:'</>', mergeable:false, tags:['producer','html'] };
-export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...htmlItems, ...hackathonItems, ...retroItems, producer, infrastructureProducer, eventProducer, htmlProducer];
+export const cssProducer: ItemDefinition = { id:'css_selector_lab', name:'CSS Selector Lab', description:'Produces selectors, specificity disputes, and one more active merge chain. Unlocks at player level 27.', kind:'producer', icon:'{ }', mergeable:false, tags:['producer','css'] };
+export const itemCatalog = [...javascriptItems, ...bugItems, ...serverItems, ...htmlItems, ...cssItems, ...hackathonItems, ...retroItems, producer, infrastructureProducer, eventProducer, htmlProducer, cssProducer];
 export const itemById = new Map(itemCatalog.map((item) => [item.id, item]));

@@ -63,6 +63,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '🛡️',
     tag: 'SAVE INTEGRITY',
   },
+  {
+    id: 'css-selector-lab',
+    version: '0.8.0',
+    date: '2026-08-17',
+    headline: 'The Cascade Has Entered Production',
+    body: 'Level 27 now deploys the CSS Selector Lab with nine new merge levels, seven support requests, and two achievements. CSS tickets cross into existing chains, while new capacity warnings help you manage the intended board pressure. Portrait players can also see their level again, and the Content Registry close control now respects iPhone safe areas.',
+    icon: '🎨',
+    tag: 'CONTENT EXPANSION',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

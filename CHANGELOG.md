@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — CSS Selector Lab
+
+- Added the level-27 CSS Selector Lab and a visually distinct nine-level chain from Type Selector through Design System.
+- Added seven staged CSS support tickets, including cross-chain requests that compete for HTML, JavaScript, and bug items.
+- Added Cascade Operator and Pixel Authority achievements plus full Content Registry coverage.
+- Added visible board-capacity warnings at five free cells and a critical state at two free cells.
+- Kept the player level visible in narrow portrait HUDs and made the Content Registry safe-area-aware on installed iPhone PWAs.
+
 ## 0.7.1 — Cloud reconciliation hotfix
 
 - Treat byte-for-byte equivalent local and cloud game states as synchronized, even when stale link metadata says both changed.
