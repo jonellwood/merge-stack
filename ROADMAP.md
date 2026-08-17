@@ -137,6 +137,8 @@ Design notes:
 
 ## CSS Selector Lab
 
+**Implemented in v0.8.0.** The production chain follows the nine-level path below, unlocks at level 27, costs 3 energy, and introduces cross-chain support requests plus low-space capacity warnings.
+
 Working concept: a permanent generator about selectors, specificity, and the cascade.
 
 Possible merge path:
@@ -374,11 +376,11 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 - ~~Add HTML ticket templates and registry content.~~ Implemented in v0.4.0.
 - ~~Add the badge data model and a small profile Badge Cabinet before the next seasonal event.~~ Implemented in v0.4.0.
 - Playtest progression timing and board occupancy.
-- Add the CSS Selector Lab only after HTML balance is stable.
+- ~~Add the CSS Selector Lab only after HTML balance is stable.~~ Implemented in v0.8.0 after HTML and Server Rack playtesting.
 
 ### Phase 2 — Board-pressure tuning
 
-- Track free-cell count and show low-space warnings.
+- ~~Track free-cell count and show low-space warnings.~~ Implemented in v0.8.0 at five and two free cells.
 - Review generator unlock placement and energy costs.
 - Measure recycling, Tidy usage, failed spawns, and abandoned sessions.
 - Prototype movable-but-protected generators.
@@ -412,7 +414,7 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 ## Open decisions
 
-- Final unlock levels for HTML, CSS, branching, and the Bounty Box.
+- Final unlock levels for the branching generator and Bounty Box; HTML and CSS currently ship at levels 20 and 27.
 - Whether all permanent generators occupy the board simultaneously.
 - Design dedicated deployment bays if generator storage is added.
 - Revisit the current automatic rack compaction only if playtesting shows a meaningful benefit to manual placement.

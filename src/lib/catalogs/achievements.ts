@@ -17,6 +17,8 @@ export const achievementCatalog: AchievementDefinition[] = [
   {id:'rack-mounted',name:'Rack Mounted',description:'Store your first item in the Server Rack.',icon:'▤',category:'operations'},
   {id:'html-operator',name:'Markup Operator',description:'Deploy the HTML Workbench at level 20.',icon:'</>',category:'progression'},
   {id:'html-certified',name:'Standards Compliant',description:'Build Production Markup.',icon:'W3',category:'merge'},
+  {id:'css-operator',name:'Cascade Operator',description:'Deploy the CSS Selector Lab at level 27.',icon:'{ }',category:'progression'},
+  {id:'css-architect',name:'Pixel Authority',description:'Build a complete Design System.',icon:'▦',category:'merge'},
   {id:'hackathon-winner',name:'Hackathon Winner',description:'Redeem a Winning Hack during Hackathon Weekend.',icon:'🏆',category:'event',eventId:'hackathon-2026'}
   ,{id:'retro-cloud',name:'Back to the Cloud',description:'Merge thirty years of computing into a Cloud Desktop during Retro Computing Week.',icon:'💾',category:'event',eventId:'retro-computing-2026'}
 ];

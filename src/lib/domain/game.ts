@@ -21,6 +21,8 @@ export function evaluateAchievements(state:GameState,now=Date.now()):string[]{
   if(state.serverRack.items.length)award('rack-mounted');
   if(definitions.has('html_workbench'))award('html-operator');
   if(definitions.has('production_markup'))award('html-certified');
+  if(definitions.has('css_selector_lab'))award('css-operator');
+  if(definitions.has('design_system'))award('css-architect');
   if(state.statistics.eventFinalsRedeemed>=1)award('hackathon-winner',HACKATHON_EVENT.id);
   if(definitions.has('cloud_desktop'))award('retro-cloud',RETRO_COMPUTING_EVENT.id);
   return earned;
