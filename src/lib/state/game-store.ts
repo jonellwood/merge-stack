@@ -2,7 +2,7 @@ import { get, writable } from 'svelte/store';
 import { activateProducer, cashoutExpiredHackathon, cashoutExpiredRetro, completeTicket, createGame, discardItem, expandRack, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
 import { playerTitle, shopFlavorForLevel } from '$lib/catalogs/titles';
 import { achievementById } from '$lib/catalogs/achievements';
-import type { GameState } from '$lib/domain/types';
+import type { AppearanceTheme, GameState } from '$lib/domain/types';
 import { deleteSave, downloadSave, loadBackups, loadSave, requestPersistentStorage, restoreBackup, saveGame, type SaveBackup } from '$lib/persistence/db';
 import { cloudActionBlocked, queueCloudSnapshot } from '$lib/cloud/sync-manager';
 
@@ -53,7 +53,7 @@ export const actions = {
   expandRack:()=>{const state=get(game);return state?commit(expandRack(state)):Promise.resolve(false)},
   unlock:(index:number)=>{const state=get(game);return state?commit(unlockCell(state,index)):Promise.resolve(false)},
   buyEnergy:()=>{const state=get(game);return state?commit(purchaseEnergy(state)):Promise.resolve(false)},
-  setting:async (key:'sound'|'reducedMotion'|'highContrast'|'hints',value:boolean)=>{if(mutationPaused())return;const state=get(game);if(!state)return;const next=structuredClone(state);next.settings[key]=value;next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},
+  setting:async (key:'sound'|'reducedMotion'|'highContrast'|'hints'|'appearance',value:boolean|AppearanceTheme)=>{if(mutationPaused())return;const state=get(game);if(!state)return;const next=structuredClone(state);Object.assign(next.settings,{[key]:value});next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)},
   tick:async()=>{if(mutationPaused())return;const state=get(game);if(!state)return;let next=structuredClone(state),changed=normalizeEnergy(next);const retroArchive=cashoutExpiredRetro(next);if(retroArchive.ok){next=retroArchive.state;changed=true}if(syncProgressionUnlocks(next))changed=true;if(repairTicketQueue(next))changed=true;if(changed){next.updatedAt=Date.now();game.set(next);await saveGame(next);queueCloudSnapshot(next)}},
   reset:async()=>{if(mutationPaused())return;await deleteSave();const state=createGame();game.set(state);await saveGame(state);queueCloudSnapshot(state);notice.set('Fresh environment deployed.')},
   exportSave:()=>{const state=get(game);if(state)downloadSave(state)},

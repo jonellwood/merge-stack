@@ -360,6 +360,35 @@ The recommended first implementation is a generator detail-panel `Move` action. 
 
 The Server Rack should arrive before or alongside the fifth permanent generator. It gives players agency over space without removing the intended late-game constraint.
 
+## Support ticket reassignment
+
+Players should be able to pay credits to **Reassign** an active support ticket they do not want to complete. This is an escape valve for an awkward queue, not a free reroll system.
+
+Starting balance proposal:
+
+- First reassignment in a rolling six-hour window: `100` credits.
+- Each additional reassignment in that window doubles in price: `200`, `400`, `800`, and so on.
+- Reset the reassignment tier after six hours, matching the existing energy-shop and Tidy economy window where practical.
+- Show the current price and time until the price tier resets before confirmation.
+- Remove the selected ticket and fill its queue slot immediately.
+
+Selection and safety rules:
+
+- Exclude the ticket definition that was just reassigned from the immediate replacement draw; the player must never pay to receive the same ticket again.
+- Prefer a replacement whose required generators are unlocked and currently usable.
+- Preserve the normal ticket eligibility, level, event-lifecycle, and duplicate-queue safeguards.
+- If no different eligible ticket exists, disable reassignment and explain why instead of charging the player.
+- Warn before reassigning a ticket that is already ready to resolve or has substantial requirements currently available on the board.
+- Persist the reassignment count, price-window timestamp, and excluded ticket ID in local and cloud saves so reloads or device changes cannot reset the cost.
+- Make the charge, removal, and replacement one atomic game-state action so a crash cannot consume credits without replacing the ticket.
+- Track reassignment frequency, price tier, rejected ticket, and replacement ticket for balance analysis without recording player-identifying content.
+
+Questions for playtesting:
+
+- Is `100` credits sufficiently meaningful at the level where reassignment becomes available, or should the starting price scale with player level?
+- Should reassignment unlock immediately, or appear only after the player has resolved a minimum number of tickets?
+- Should the immediate exclusion apply only to the rejected ticket ID, or also to tickets with an effectively identical requirement set?
+
 ## Suggested implementation sequence
 
 ### Reliability foundation — Implemented in v0.7.0
@@ -380,9 +409,11 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 ### Phase 2 — Board-pressure tuning
 
+- ~~Add graduated brightness presets for players who find the original interface too dark, especially on phones.~~ Implemented after v0.8.0; awaiting the next release.
 - ~~Track free-cell count and show low-space warnings.~~ Implemented in v0.8.0 at five and two free cells.
 - Review generator unlock placement and energy costs.
 - Measure recycling, Tidy usage, failed spawns, and abandoned sessions.
+- Prototype paid ticket reassignment with escalating six-hour pricing and no immediate repeat.
 - Prototype movable-but-protected generators.
 - Playtest the implemented `6U` Server Rack and its four purchasable expansions.
 - Keep generators out of ordinary rack capacity until dedicated deployment bays are designed.
