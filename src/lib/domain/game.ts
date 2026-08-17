@@ -85,7 +85,7 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 export function createGame(now = Date.now()): GameState {
   const state: GameState = { schemaVersion:5, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
-    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false,hints:true}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false,hints:true,appearance:'dark'}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
   return state;
 }
@@ -319,8 +319,9 @@ export function repairSaveShape(state:GameState):boolean {
   if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
   if(!state.tidyService){state.tidyService={windowStartedAt:null,uses:0};changed=true}
   if(!state.serverRack){state.serverRack={capacity:BALANCE.serverRackStartingU,expansions:0,items:[]};changed=true}
-  if(!state.settings){state.settings={sound:true,reducedMotion:false,highContrast:false,hints:true};changed=true}
+  if(!state.settings){state.settings={sound:true,reducedMotion:false,highContrast:false,hints:true,appearance:'dark'};changed=true}
   if(state.settings.hints===undefined){state.settings.hints=true;changed=true}
+  if(state.settings.appearance===undefined){state.settings.appearance='dark';changed=true}
   if(!state.achievements){state.achievements={};changed=true}
   if(!state.statistics){state.statistics={mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0};changed=true}
   for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
