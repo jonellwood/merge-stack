@@ -5,6 +5,7 @@
 - Added four saved appearance presets: Dark Mode, Less Dark Mode, Not as Dark Mode, and Dark Mode Lite.
 - Brightened the board, HUD, support queue, and dialogs progressively while preserving Merge Stack's dark developer-console identity.
 - Made the expanded settings dialog scroll safely on small mobile screens.
+- Restored distinct merge-chain colors on portrait phone boards so CSS, HTML, server, bug, JavaScript, and event items remain easy to scan.
 
 ## 0.8.0 — CSS Selector Lab
 
