@@ -8,3 +8,16 @@ build/
 !.env.example
 npm-debug.log*
 Merge_Stack_Seasonal_Event_Ideas.md
+
+# Android output and machine-local signing configuration. Android source is
+# maintained on feature/capacitor-android; these files must never be committed.
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/app/src/main/assets/
+/android/app/src/main/res/xml/config.xml
+/android/capacitor-cordova-android-plugins/
+/android/keystore.properties
+/android/local.properties
+/android/*.jks
+/android/*.keystore
