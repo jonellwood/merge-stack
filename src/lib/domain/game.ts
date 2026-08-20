@@ -195,6 +195,33 @@ export function findMergeHint(state:GameState):[string,string]|undefined{
   }
   return undefined;
 }
+export function findProducerHint(state:GameState,now=Date.now()):string|undefined{
+  const hasFreeCell=state.cells.some(cell=>!cell.locked&&!state.items.some(item=>item.cellIndex===cell.index));
+  if(!hasFreeCell)return undefined;
+  const producers=state.items.filter(item=>{
+    const producer=producerByItemId.get(item.definitionId);
+    if(!producer||state.player.energy<producer.energyCost)return false;
+    if(producer.activeFrom!==undefined&&now<producer.activeFrom)return false;
+    if(producer.activeUntil!==undefined&&now>=producer.activeUntil)return false;
+    return !(item.state?.cooldownUntil&&item.state.cooldownUntil>now&&(item.state.activationsRemaining??producer.burstCapacity??1)<=0);
+  }).sort((a,b)=>a.cellIndex-b.cellIndex);
+  const canProduce=(producerId:string,targetId:string)=>{
+    const producer=producerByItemId.get(producerId);if(!producer)return false;
+    return producer.drops.some(drop=>{
+      let itemId:string|undefined=drop.itemId;const visited=new Set<string>();
+      while(itemId&&!visited.has(itemId)){if(itemId===targetId)return true;visited.add(itemId);itemId=itemById.get(itemId)?.nextItemId}
+      return false;
+    });
+  };
+  const boardCounts=new Map<string,number>();
+  for(const item of state.items)if(itemById.get(item.definitionId)?.kind==='mergeable')boardCounts.set(item.definitionId,(boardCounts.get(item.definitionId)??0)+1);
+  for(const ticket of state.tickets)for(const requirement of ticket.requirements){
+    if((boardCounts.get(requirement.itemId)??0)>=requirement.quantity)continue;
+    const useful=producers.find(item=>canProduce(item.definitionId,requirement.itemId));
+    if(useful)return useful.instanceId;
+  }
+  return producers[0]?.instanceId;
+}
 export function itemsContributingToTicket(state:GameState,ticket:Ticket):BoardItem[]{
   return ticket.requirements.flatMap(requirement=>state.items.filter(item=>item.definitionId===requirement.itemId).sort((a,b)=>a.cellIndex-b.cellIndex).slice(0,requirement.quantity));
 }

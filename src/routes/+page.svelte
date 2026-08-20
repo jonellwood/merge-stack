@@ -7,7 +7,7 @@
   import { cloudSync, inspectCloudState, resetCloudSync, watchCloudSave } from '$lib/cloud/sync-manager';
   import { checkpointSave, loadSave, saveGame, watchLocalSaves } from '$lib/persistence/db';
   import { isNativeApp } from '$lib/platform';
-  import { findMergeHint, ticketReady } from '$lib/domain/game';
+  import { findMergeHint, findProducerHint, ticketReady } from '$lib/domain/game';
   import { actions, game, initialize, notice, ready, storageRecovery } from '$lib/state/game-store';
   let settingsOpen=$state(false), ticketsOpen=$state(false), registryOpen=$state(false), energyShopOpen=$state(false), accountOpen=$state(false), badgesOpen=$state(false), resetConfirm=$state(false);
   let celebration=$state(0);
@@ -31,7 +31,7 @@
         ticketsOpen=true;await nextFrame();
         const ticket=[...document.querySelectorAll<HTMLElement>('[data-ticket-id]')].find(element=>element.dataset.ticketId===ready.id);
         ticket?.scrollIntoView({behavior:latestState.settings.reducedMotion?'auto':'smooth',block:'center'});
-      }else idleMergeHints=findMergeHint(latestState)??[];
+      }else{const merge=findMergeHint(latestState),producer=merge?undefined:findProducerHint(latestState);idleMergeHints=merge??(producer?[producer]:[])}
     }
     function resetIdle(){clearTimeout(idleTimer);idleMergeHints=[];idleTimer=setTimeout(idleAssist,5_000)}
     const interactionEvents=['pointerdown','keydown','wheel'] as const;

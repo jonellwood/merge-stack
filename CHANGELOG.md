@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Extended idle assistance to highlight a usable, ticket-relevant generator when there are no ready tickets or mergeable pairs.
 - Added four saved appearance presets: Dark Mode, Less Dark Mode, Not as Dark Mode, and Dark Mode Lite.
 - Brightened the board, HUD, support queue, and dialogs progressively while preserving Merge Stack's dark developer-console identity.
 - Made the expanded settings dialog scroll safely on small mobile screens.
