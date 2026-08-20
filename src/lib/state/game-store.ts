@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { activateProducer, cashoutExpiredHackathon, cashoutExpiredRetro, completeTicket, createGame, discardItem, expandRack, moveOrMerge, normalizeEnergy, purchaseEnergy, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
+import { activateProducer, cashoutExpiredHackathon, cashoutExpiredRetro, completeTicket, createGame, discardItem, expandRack, moveGenerator, moveOrMerge, normalizeEnergy, purchaseEnergy, reassignTicket, redeemEventItem, repairSaveShape, repairTicketQueue, retrieveFromRack, storeInRack, syncProgressionUnlocks, tidyBoard, unlockCell, validateState } from '$lib/domain/game';
 import { playerTitle, shopFlavorForLevel } from '$lib/catalogs/titles';
 import { achievementById } from '$lib/catalogs/achievements';
 import type { AppearanceTheme, GameState } from '$lib/domain/types';
@@ -42,8 +42,10 @@ export async function initialize() {
 }
 export const actions = {
   move:(id:string,cell:number)=>{const state=get(game);return state?commit(moveOrMerge(state,id,cell)):Promise.resolve(false)},
+  moveGenerator:(id:string,cell:number)=>{const state=get(game);return state?commit(moveGenerator(state,id,cell)):Promise.resolve(false)},
   produce:(id:string)=>{const state=get(game);return state?commit(activateProducer(state,id)):Promise.resolve(false)},
   ticket:(id:string)=>{const state=get(game);return state?commit(completeTicket(state,id)):Promise.resolve(false)},
+  reassignTicket:(id:string)=>{const state=get(game);return state?commit(reassignTicket(state,id)):Promise.resolve(false)},
   redeemEvent:(id:string,reward:'energy'|'credits')=>{const state=get(game);return state?commit(redeemEventItem(state,id,reward)):Promise.resolve(false)},
   cashoutHackathon:()=>{const state=get(game);return state?commit(cashoutExpiredHackathon(state)):Promise.resolve(false)},
   discard:(id:string)=>{const state=get(game);return state?commit(discardItem(state,id)):Promise.resolve(false)},

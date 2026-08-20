@@ -72,6 +72,15 @@ export const ANNOUNCEMENTS: Announcement[] = [
     icon: '🎨',
     tag: 'CONTENT EXPANSION',
   },
+  {
+    id: 'support-operations',
+    version: '0.9.0',
+    date: '2026-08-20',
+    headline: 'The Queue Has Admin Tools Now',
+    body: 'Reassign an unwanted support ticket for an escalating credit fee, or reorganize your board by moving generators through their detail panels. Idle assistance now points to ticket-relevant generators when no merge is available, and every chain keeps its own color across all screen sizes and four scientifically calibrated varieties of dark mode.',
+    icon: '🧰',
+    tag: 'BOARD CONTROL',
+  },
 ];
 
 export function latestAnnouncement(): Announcement | undefined {

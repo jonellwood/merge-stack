@@ -55,13 +55,16 @@ function availableTemplates(level: number, now = Date.now()) {
   const ceiling = Math.min(2 + Math.floor((level - 1) / 2), 10);
   return ticketTemplates.filter((template) => (template.minPlayerLevel??1)<=level && (template.activeFrom===undefined||now>=template.activeFrom) && (template.activeUntil===undefined||now<template.activeUntil) && template.requirements.every((requirement) => (itemById.get(requirement.itemId)?.level ?? 99) <= ceiling));
 }
-export function generateTicket(state: GameState, now = Date.now()): Ticket {
+export function generateTicket(state: GameState, now = Date.now(), excludedTitles:ReadonlySet<string>=new Set()): Ticket {
   const available = availableTemplates(state.player.level,now);
-  const activeTitles = new Set(state.tickets.map((ticket) => ticket.title));
+  const activeTitles = new Set([...state.tickets.map((ticket) => ticket.title),...excludedTitles]);
   const uniqueTemplates = available.filter((template) => !activeTitles.has(template.title));
   const templates = uniqueTemplates.length > 0 ? uniqueTemplates : available;
   const template = templates[state.ticketSequence % templates.length];
   state.ticketSequence++;
+  return createTicketFromTemplate(template,now);
+}
+function createTicketFromTemplate(template:typeof ticketTemplates[number],now:number):Ticket{
   const rewards=ticketRewards(template);
   return { id:makeId(), requesterId:template.requester.toLowerCase().replaceAll(' ','-'), requester:template.requester, title:template.title,
     description:template.description, requirements:template.requirements, rewards, status:'active', createdAt:now };
@@ -83,9 +86,9 @@ export function repairTicketQueue(state: GameState, now = Date.now()): boolean {
 }
 
 export function createGame(now = Date.now()): GameState {
-  const state: GameState = { schemaVersion:5, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
+  const state: GameState = { schemaVersion:6, player:{id:'local-player',credits:BALANCE.startingCredits,xp:0,level:1,title:playerTitle(1),energy:BALANCE.startingEnergy,maxEnergy:BALANCE.maxEnergy,energyUpdatedAt:now},
     cells:Array.from({length:BALANCE.columns*BALANCE.rows},(_,index)=>({index,locked:index>=BALANCE.initialUnlocked,unlockCost:index>=BALANCE.initialUnlocked ? 50 + Math.floor((index-BALANCE.initialUnlocked)/7)*25 : undefined})),
-    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false,hints:true,appearance:'dark'}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
+    items:[{instanceId:makeId(),definitionId:'workstation',cellIndex:3,createdAt:now}], tickets:[], settings:{sound:true,reducedMotion:false,highContrast:false,hints:true,appearance:'dark'}, energyShop:{windowStartedAt:null,purchases:0},tidyService:{windowStartedAt:null,uses:0},ticketReassignment:{windowStartedAt:null,uses:0},serverRack:{capacity:BALANCE.serverRackStartingU,expansions:0,items:[]},achievements:{},statistics:{mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0},ticketSequence:0,updatedAt:now };
   while (state.tickets.length < BALANCE.activeTickets) state.tickets.push(generateTicket(state, now));
   return state;
 }
@@ -154,6 +157,16 @@ export function moveOrMerge(original: GameState, sourceId: string, targetCellInd
     }
   }
   state.updatedAt=now; return {state,ok:true,action};
+}
+export function moveGenerator(original:GameState,producerId:string,targetCellIndex:number,now=Date.now()){
+  const producer=original.items.find(item=>item.instanceId===producerId),definition=producer&&itemById.get(producer.definitionId),cell=original.cells[targetCellIndex];
+  if(!producer||definition?.kind!=='producer')return{state:original,ok:false,reason:'Generator not found'};
+  if(!cell)return{state:original,ok:false,reason:'Invalid destination'};
+  if(cell.locked)return{state:original,ok:false,reason:'Choose an unlocked cell'};
+  if(producer.cellIndex===targetCellIndex)return{state:original,ok:false,reason:'Generator is already there'};
+  if(original.items.some(item=>item.cellIndex===targetCellIndex))return{state:original,ok:false,reason:'Choose an empty cell'};
+  const state=clone(original),moving=state.items.find(item=>item.instanceId===producerId)!;moving.cellIndex=targetCellIndex;state.updatedAt=now;
+  return{state,ok:true,action:'generator-move',message:`${definition.name} moved`};
 }
 
 export function activateProducer(original: GameState, producerId: string, random=Math.random, now=Date.now()) {
@@ -235,6 +248,27 @@ export function completeTicket(original: GameState, ticketId: string, now=Date.n
   state.items=state.items.filter(i=>!consumed.has(i.instanceId)); state.player.credits+=ticket.rewards.credits; state.player.xp+=ticket.rewards.xp; state.player.energy=Math.min(state.player.maxEnergy,state.player.energy+(ticket.rewards.energy??0));if(state.player.energy>=state.player.maxEnergy)state.player.energyUpdatedAt=now; levelPlayer(state,now);
   state.statistics.ticketsCompleted++;evaluateAchievements(state,now);state.tickets=state.tickets.filter(t=>t.id!==ticketId); state.tickets.push(generateTicket(state,now)); state.updatedAt=now;
   return {state,ok:true,action:'ticket',message:`Ticket closed: +${ticket.rewards.credits} credits, +${ticket.rewards.xp} XP${ticket.rewards.energy?`, +${ticket.rewards.energy} energy`:''}`};
+}
+export function ticketReassignmentQuote(state:GameState,now=Date.now()){
+  const service=state.ticketReassignment??{windowStartedAt:null,uses:0};
+  const expired=service.windowStartedAt===null||now-service.windowStartedAt>=BALANCE.ticketReassignmentWindowMs;
+  const uses=expired?0:service.uses;
+  return{cost:BALANCE.ticketReassignmentBaseCost*2**Math.min(uses,10),uses,resetsAt:expired?null:(service.windowStartedAt??now)+BALANCE.ticketReassignmentWindowMs};
+}
+export function reassignTicket(original:GameState,ticketId:string,now=Date.now()){
+  const ticketIndex=original.tickets.findIndex(ticket=>ticket.id===ticketId),rejected=original.tickets[ticketIndex];
+  if(!rejected)return{state:original,ok:false,reason:'Ticket not found'};
+  const blockedTitles=new Set(original.tickets.map(ticket=>ticket.title));
+  const candidates=availableTemplates(original.player.level,now).filter(template=>!blockedTitles.has(template.title));
+  if(!candidates.length)return{state:original,ok:false,reason:'No different eligible ticket is currently available'};
+  const quote=ticketReassignmentQuote(original,now);
+  if(original.player.credits<quote.cost)return{state:original,ok:false,reason:`Need ${quote.cost} credits to reassign this ticket`};
+  const state=clone(original),template=candidates[state.ticketSequence%candidates.length];state.ticketSequence++;
+  state.tickets[ticketIndex]=createTicketFromTemplate(template,now);
+  state.player.credits-=quote.cost;
+  state.ticketReassignment=quote.uses===0?{windowStartedAt:now,uses:1,lastRejectedTitle:rejected.title}:{...state.ticketReassignment,uses:state.ticketReassignment.uses+1,lastRejectedTitle:rejected.title};
+  state.updatedAt=now;
+  return{state,ok:true,action:'ticket-reassign',message:`Ticket reassigned for ${quote.cost} credits`};
 }
 export function redeemEventItem(original:GameState,itemId:string,reward:'energy'|'credits',now=Date.now()){
   const item=original.items.find(candidate=>candidate.instanceId===itemId);
@@ -345,6 +379,7 @@ export function repairSaveShape(state:GameState):boolean {
   let changed=false;
   if(!state.energyShop){state.energyShop={windowStartedAt:null,purchases:0};changed=true}
   if(!state.tidyService){state.tidyService={windowStartedAt:null,uses:0};changed=true}
+  if(!state.ticketReassignment){state.ticketReassignment={windowStartedAt:null,uses:0};changed=true}
   if(!state.serverRack){state.serverRack={capacity:BALANCE.serverRackStartingU,expansions:0,items:[]};changed=true}
   if(!state.settings){state.settings={sound:true,reducedMotion:false,highContrast:false,hints:true,appearance:'dark'};changed=true}
   if(state.settings.hints===undefined){state.settings.hints=true;changed=true}
@@ -352,7 +387,7 @@ export function repairSaveShape(state:GameState):boolean {
   if(!state.achievements){state.achievements={};changed=true}
   if(!state.statistics){state.statistics={mergesCompleted:0,ticketsCompleted:0,eventFinalsRedeemed:0};changed=true}
   for(const ticket of state.tickets)if(!Number.isFinite(ticket.rewards.energy)){ticket.rewards.energy=ticketRewards(ticket).energy;changed=true}
-  if(state.schemaVersion<5){state.schemaVersion=5;changed=true}
+  if(state.schemaVersion<6){state.schemaVersion=6;changed=true}
   if(!state.player.title){state.player.title=playerTitle(state.player.level);changed=true}
   if(evaluateAchievements(state).length)changed=true;
   return changed;

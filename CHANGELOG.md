@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — Support Operations
 
 - Extended idle assistance to highlight a usable, ticket-relevant generator when there are no ready tickets or mergeable pairs.
+- Added paid support-ticket reassignment with 100/200/400-credit escalating fees, a six-hour reset window, contribution warnings, and immediate-repeat protection.
+- Added schema-6 local/cloud persistence for reassignment pricing and the most recently rejected ticket.
+- Added protected generator movement through each generator's detail panel, with an explicit move mode and highlighted empty destinations.
+- Applied distinct JavaScript, bug, server, HTML, CSS, and event item palettes at every viewport size instead of limiting most chain colors to phone layouts.
 - Added four saved appearance presets: Dark Mode, Less Dark Mode, Not as Dark Mode, and Dark Mode Lite.
 - Brightened the board, HUD, support queue, and dialogs progressively while preserving Merge Stack's dark developer-console identity.
 - Made the expanded settings dialog scroll safely on small mobile screens.

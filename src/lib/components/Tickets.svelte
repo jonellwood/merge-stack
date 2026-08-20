@@ -2,16 +2,19 @@
   import { onMount, untrack } from 'svelte';
   import type { GameState } from '$lib/domain/types';
   import { itemById } from '$lib/catalogs/items';
-  import { ticketReady } from '$lib/domain/game';
+  import { itemsContributingToTicket, ticketReady, ticketReassignmentQuote } from '$lib/domain/game';
   import { actions } from '$lib/state/game-store';
   let { state: gameState }: {state:GameState}=$props();
-  let resolving=$state<string|null>(null);
+  let resolving=$state<string|null>(null),reassigning=$state<string|null>(null),confirming=$state<string|null>(null);
   let clock=$state(Date.now());
   let readySince=$state<Record<string,number>>({});
   const nudgeDelay=5_000;
   const owned=(id:string)=>gameState.items.filter(i=>i.definitionId===id).length;
   const remaining=(id:string)=>Math.max(0,Math.ceil((nudgeDelay-(clock-(readySince[id]??clock)))/1000));
+  const duration=(milliseconds:number)=>{const seconds=Math.max(0,Math.ceil(milliseconds/1000));return `${Math.floor(seconds/3600)}:${String(Math.floor(seconds%3600/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`};
+  let reassignmentQuote=$derived(ticketReassignmentQuote(gameState,clock));
   async function resolve(id:string){if(resolving)return;resolving=id;try{await actions.ticket(id)}finally{resolving=null}}
+  async function reassign(id:string){if(reassigning)return;reassigning=id;try{if(await actions.reassignTicket(id))confirming=null}finally{reassigning=null}}
   $effect(()=>{
     const statuses=gameState.tickets.map(ticket=>[ticket.id,ticketReady(gameState,ticket)] as const);
     const current=untrack(()=>readySince), next:Record<string,number>={}; let changed=false;
@@ -35,7 +38,11 @@
           </div>
         {/each}
       </div>
-      <div class="ticket-foot"><span>◈ {ticket.rewards.credits} &nbsp; ✦ {ticket.rewards.xp} XP {#if ticket.rewards.energy}&nbsp; ⚡ {ticket.rewards.energy}{/if}</span><button class:ready-nudge={ticketReady(gameState,ticket)&&remaining(ticket.id)===0} disabled={!ticketReady(gameState,ticket)||resolving!==null} onclick={()=>resolve(ticket.id)}>{resolving===ticket.id?'Closing…':ticketReady(gameState,ticket)?'Resolve':'Gather items'}</button></div>
+      <div class="ticket-foot"><span>◈ {ticket.rewards.credits} &nbsp; ✦ {ticket.rewards.xp} XP {#if ticket.rewards.energy}&nbsp; ⚡ {ticket.rewards.energy}{/if}</span><div class="ticket-actions"><button class="reassign-button" disabled={resolving!==null||reassigning!==null} onclick={()=>confirming=confirming===ticket.id?null:ticket.id}>Reassign · ◈{reassignmentQuote.cost}</button><button class:ready-nudge={ticketReady(gameState,ticket)&&remaining(ticket.id)===0} disabled={!ticketReady(gameState,ticket)||resolving!==null||reassigning!==null} onclick={()=>resolve(ticket.id)}>{resolving===ticket.id?'Closing…':ticketReady(gameState,ticket)?'Resolve':'Gather items'}</button></div></div>
+      {#if confirming===ticket.id}
+        {@const contributing=itemsContributingToTicket(gameState,ticket).length}
+        <div class="reassign-confirm" role="group" aria-label={`Confirm reassignment of ${ticket.title}`}><small>QUEUE REASSIGNMENT · SIX-HOUR WINDOW</small><b>Replace this ticket for ◈ {reassignmentQuote.cost}?</b>{#if ticketReady(gameState,ticket)}<p class="reassign-warning">This ticket is ready to resolve. Reassigning it will leave those items on your board.</p>{:else if contributing}<p class="reassign-warning">{contributing} board {contributing===1?'item currently contributes':'items currently contribute'} to this ticket.</p>{:else}<p>The replacement will be different and eligible for your current level.</p>{/if}{#if reassignmentQuote.resetsAt}<p>Price tier resets in {duration(reassignmentQuote.resetsAt-clock)}.</p>{/if}<div><button onclick={()=>confirming=null}>Keep ticket</button><button class="confirm-reassign" disabled={gameState.player.credits<reassignmentQuote.cost||reassigning!==null} onclick={()=>reassign(ticket.id)}>{reassigning===ticket.id?'Reassigning…':gameState.player.credits<reassignmentQuote.cost?`Need ◈ ${reassignmentQuote.cost-gameState.player.credits}`:`Confirm · ◈ ${reassignmentQuote.cost}`}</button></div></div>
+      {/if}
     </article>
   {/each}
 </section>
