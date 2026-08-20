@@ -362,6 +362,8 @@ The Server Rack should arrive before or alongside the fifth permanent generator.
 
 ## Support ticket reassignment
 
+**Implemented in v0.9.0.** The first reassignment costs `100` credits, doubles within a six-hour window, preserves queue position, and excludes the rejected and currently active ticket titles from replacement selection.
+
 Players should be able to pay credits to **Reassign** an active support ticket they do not want to complete. This is an escape valve for an awkward queue, not a free reroll system.
 
 Starting balance proposal:
@@ -409,12 +411,12 @@ Questions for playtesting:
 
 ### Phase 2 — Board-pressure tuning
 
-- ~~Add graduated brightness presets for players who find the original interface too dark, especially on phones.~~ Implemented after v0.8.0; awaiting the next release.
+- ~~Add graduated brightness presets for players who find the original interface too dark, especially on phones.~~ Implemented in v0.9.0.
 - ~~Track free-cell count and show low-space warnings.~~ Implemented in v0.8.0 at five and two free cells.
 - Review generator unlock placement and energy costs.
 - Measure recycling, Tidy usage, failed spawns, and abandoned sessions.
-- Prototype paid ticket reassignment with escalating six-hour pricing and no immediate repeat.
-- Prototype movable-but-protected generators.
+- ~~Prototype paid ticket reassignment with escalating six-hour pricing and no immediate repeat.~~ Implemented in v0.9.0.
+- ~~Prototype movable-but-protected generators.~~ Implemented in v0.9.0 through the generator detail panel.
 - Playtest the implemented `6U` Server Rack and its four purchasable expansions.
 - Keep generators out of ordinary rack capacity until dedicated deployment bays are designed.
 

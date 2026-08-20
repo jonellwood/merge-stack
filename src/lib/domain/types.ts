@@ -13,11 +13,12 @@ export interface TicketTemplate { id: string; requester: string; title: string; 
 export interface Ticket { id: string; requesterId: string; requester: string; title: string; description: string; requirements: Requirement[]; rewards: { credits: number; xp: number; energy: number }; status: 'active' | 'completed'; createdAt: number; }
 export interface EnergyShopState { windowStartedAt: number | null; purchases: number; }
 export interface TidyServiceState { windowStartedAt: number | null; uses: number; }
+export interface TicketReassignmentState { windowStartedAt: number | null; uses: number; lastRejectedTitle?: string; }
 export interface RackItem { instanceId: string; definitionId: string; createdAt: number; storedAt: number; originProducerId?: string; state?: BoardItemState; }
 export interface ServerRackState { capacity: number; expansions: number; items: RackItem[]; }
 export type AppearanceTheme = 'dark' | 'less-dark' | 'not-as-dark' | 'dark-lite';
 export interface GameSettings { sound: boolean; reducedMotion: boolean; highContrast: boolean; hints: boolean; appearance: AppearanceTheme; }
 export interface AchievementRecord { earnedAt: number; eventId?: string; }
 export interface GameStatistics { mergesCompleted: number; ticketsCompleted: number; eventFinalsRedeemed: number; }
-export interface GameState { schemaVersion: number; player: PlayerState; cells: BoardCell[]; items: BoardItem[]; tickets: Ticket[]; settings: GameSettings; energyShop: EnergyShopState; tidyService: TidyServiceState; serverRack: ServerRackState; achievements: Record<string,AchievementRecord>; statistics: GameStatistics; ticketSequence: number; updatedAt: number; }
+export interface GameState { schemaVersion: number; player: PlayerState; cells: BoardCell[]; items: BoardItem[]; tickets: Ticket[]; settings: GameSettings; energyShop: EnergyShopState; tidyService: TidyServiceState; ticketReassignment: TicketReassignmentState; serverRack: ServerRackState; achievements: Record<string,AchievementRecord>; statistics: GameStatistics; ticketSequence: number; updatedAt: number; }
 export interface CommandResult { ok: boolean; reason?: string; message?: string; action?: string; }
